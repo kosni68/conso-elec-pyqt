@@ -606,12 +606,12 @@ class InteractiveChartView(QWidget):
 class OverviewChartView(InteractiveChartView):
     def __init__(self) -> None:
         super().__init__(
-            height=12.5,
+            height=9.4,
             help_text="Survol partout | Zoom, pan et déplacement horizontal uniquement sur la consommation journalière",
             note_text="Les graphiques apparaîtront après chargement du CSV.",
             export_name="vue_globale",
         )
-        self.canvas.setMinimumHeight(1180)
+        self.canvas.setMinimumHeight(860)
         self._daily_data: dict[str, object] = {}
         self._monthly_data: dict[str, object] = {}
         self._hourly_data: dict[str, object] = {}
@@ -623,7 +623,7 @@ class OverviewChartView(InteractiveChartView):
         figure = self.canvas.figure
         figure.clear()
         style_figure(figure)
-        axes = list(np.atleast_1d(figure.subplots(3, 1, gridspec_kw={"height_ratios": [3.2, 1.25, 1.25]})))
+        axes = list(np.atleast_1d(figure.subplots(3, 1, gridspec_kw={"height_ratios": [2.55, 1.15, 1.15]})))
 
         self._daily_data = {}
         self._monthly_data = {}

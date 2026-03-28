@@ -54,10 +54,12 @@ def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindo
     assert set(window.overview_toolbar.button_map) == {"home", "back", "forward", "pan", "zoom", "reset", "save"}
     assert set(window.simulation_toolbar.button_map) == {"home", "back", "forward", "pan", "zoom", "reset", "save"}
     assert window.overview_scroll_area.widget() is window.overview_chart
+    assert window.simulation_scroll_area.widget() is window.simulation_tab_content
     assert len(window.overview_chart.plot_axes) == 3
     assert len(window.simulation_chart.plot_axes) == 1
     assert window.simulation_toolbar.button_map["pan"].isEnabled() is False
     assert window.simulation_toolbar.button_map["zoom"].isEnabled() is False
+    assert window.simulation_scroll_area.verticalScrollBarPolicy().name == "ScrollBarAsNeeded"
 
     window.day_start_edit.setTime(QTime(8, 0))
     window.day_end_edit.setTime(QTime(20, 0))

@@ -87,9 +87,11 @@ class ConsumptionMainWindow(QMainWindow):
 
         self.tabs = QTabWidget()
         self.overview_scroll_area = self._wrap_scrollable(self.overview_chart)
+        self.simulation_tab_content = self._build_simulation_tab()
+        self.simulation_scroll_area = self._wrap_scrollable(self.simulation_tab_content)
         self.tabs.addTab(self.overview_scroll_area, "Vue globale")
         self.tabs.addTab(self.filter_panel, "Filtres")
-        self.tabs.addTab(self._build_simulation_tab(), "Simulation")
+        self.tabs.addTab(self.simulation_scroll_area, "Simulation")
 
         root.addWidget(self.file_selection_bar)
         root.addWidget(self.kpi_panel)
