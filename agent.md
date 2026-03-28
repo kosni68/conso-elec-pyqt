@@ -1,5 +1,13 @@
 # Agent Instructions
 
+## Refactoring readability
+
+When refactoring, maximize human readability.
+
+Prefer small modules, focused classes, explicit names, and clear separation of responsibilities.
+
+Create classes when they make the code easier to understand, not just to add abstraction.
+
 ## Commit suggestion
 
 At the end of every response, suggest a commit message in English.

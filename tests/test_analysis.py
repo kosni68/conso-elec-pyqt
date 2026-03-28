@@ -9,24 +9,29 @@ from conso_app.analysis import (
     build_annualized_consumption,
     compute_analysis_summary,
     load_consumption_csv,
+    month_coverage,
     simulate_pv_battery,
 )
 from conso_app.models import BatteryConfig, SolarConfig, TariffConfig
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-REAL_CSV_PATH = PROJECT_ROOT / "112486686-DUBOIS-NICOLAS heure.csv"
+REAL_CSV_PATH = PROJECT_ROOT / "112486686.csv"
 
 
-@pytest.fixture()
-def sample_csv_path(tmp_path: Path) -> Path:
+def _write_sample_csv(
+    tmp_path: Path,
+    *,
+    energy_header: str = "Énergie",
+    energy_value: str = "Électricité",
+) -> Path:
     csv_content = "\n".join(
         [
-            "Énergie;Date;Consommation",
-            'Électricité;"01/01/2026 06:30:00";"0.100 kWh"',
-            'Électricité;"01/01/2026 07:00:00";"0.100 kWh"',
-            'Électricité;"01/01/2026 21:30:00";"0.100 kWh"',
-            'Électricité;"01/01/2026 22:00:00";"0.100 kWh"',
+            f"{energy_header};Date;Consommation",
+            f'{energy_value};"01/01/2026 06:30:00";"0.100 kWh"',
+            f'{energy_value};"01/01/2026 07:00:00";"0.100 kWh"',
+            f'{energy_value};"01/01/2026 21:30:00";"0.100 kWh"',
+            f'{energy_value};"01/01/2026 22:00:00";"0.100 kWh"',
         ]
     )
     path = tmp_path / "sample.csv"
@@ -34,18 +39,41 @@ def sample_csv_path(tmp_path: Path) -> Path:
     return path
 
 
-def test_load_consumption_csv_parses_utf8_sig(sample_csv_path: Path) -> None:
+@pytest.fixture()
+def sample_csv_path(tmp_path: Path) -> Path:
+    return _write_sample_csv(tmp_path)
+
+
+def test_load_consumption_csv_parses_utf8_sig_headers(sample_csv_path: Path) -> None:
     df = load_consumption_csv(sample_csv_path)
 
     assert df.index.min() == pd.Timestamp("2026-01-01 06:30:00")
     assert df.index.max() == pd.Timestamp("2026-01-01 22:00:00")
     assert df.loc[pd.Timestamp("2026-01-01 07:00:00"), "consumption_kwh"] == pytest.approx(0.1)
     assert df["consumption_kwh"].sum() == pytest.approx(0.4)
+    assert df["energy"].iloc[0] == "Électricité"
+
+
+def test_load_consumption_csv_accepts_legacy_mojibake_headers(tmp_path: Path) -> None:
+    csv_path = _write_sample_csv(
+        tmp_path,
+        energy_header="Ã‰nergie",
+        energy_value="Ã‰lectricitÃ©",
+    )
+
+    df = load_consumption_csv(csv_path)
+
+    assert df["energy"].iloc[0] == "Électricité"
+    assert df["consumption_kwh"].sum() == pytest.approx(0.4)
 
 
 def test_compute_analysis_summary_respects_day_night_boundaries(sample_csv_path: Path) -> None:
     df = load_consumption_csv(sample_csv_path)
-    tariff = TariffConfig(day_start=pd.Timestamp("2026-01-01 07:00:00").time(), day_end=pd.Timestamp("2026-01-01 22:00:00").time())
+    tariff = TariffConfig(
+        day_start=pd.Timestamp("2026-01-01 07:00:00").time(),
+        day_end=pd.Timestamp("2026-01-01 22:00:00").time(),
+    )
+
     summary = compute_analysis_summary(df, tariff)
 
     assert summary.total_kwh == pytest.approx(0.4)
@@ -53,6 +81,44 @@ def test_compute_analysis_summary_respects_day_night_boundaries(sample_csv_path:
     assert summary.night_kwh == pytest.approx(0.2)
     assert summary.hourly_profile.loc[7] == pytest.approx(0.1)
     assert summary.hourly_profile.loc[21] == pytest.approx(0.1)
+
+
+def test_compute_analysis_summary_filters_dates_inclusively(tmp_path: Path) -> None:
+    csv_content = "\n".join(
+        [
+            "Énergie;Date;Consommation",
+            'Électricité;"01/01/2026 23:30:00";"0.100 kWh"',
+            'Électricité;"02/01/2026 07:00:00";"0.200 kWh"',
+            'Électricité;"02/01/2026 21:30:00";"0.300 kWh"',
+            'Électricité;"03/01/2026 00:00:00";"0.400 kWh"',
+        ]
+    )
+    csv_path = tmp_path / "range.csv"
+    csv_path.write_text(csv_content, encoding="utf-8-sig")
+
+    df = load_consumption_csv(csv_path)
+    summary = compute_analysis_summary(
+        df,
+        TariffConfig(),
+        start_date=pd.Timestamp("2026-01-02").date(),
+        end_date=pd.Timestamp("2026-01-02").date(),
+    )
+
+    assert summary.filtered_df.index.min() == pd.Timestamp("2026-01-02 00:00:00")
+    assert summary.filtered_df.index.max() == pd.Timestamp("2026-01-02 23:30:00")
+    assert summary.total_kwh == pytest.approx(0.5)
+
+
+def test_month_coverage_detects_partial_and_full_months() -> None:
+    january_days = pd.date_range("2026-01-01", "2026-01-31", freq="D")
+    february_days = pd.date_range("2026-02-01", "2026-02-10", freq="D")
+    index = january_days.append(february_days)
+    df = pd.DataFrame({"consumption_kwh": 1.0}, index=index)
+
+    coverage = month_coverage(df)
+
+    assert coverage["period"].tolist() == [pd.Period("2026-01", freq="M"), pd.Period("2026-02", freq="M")]
+    assert coverage["is_full"].tolist() == [True, False]
 
 
 def test_load_real_csv_keeps_all_intervals() -> None:
@@ -84,7 +150,14 @@ def test_simulation_without_pv_keeps_same_grid_need() -> None:
         annualized,
         TariffConfig(base_rate_eur_kwh=0.25),
         SolarConfig(pv_kwc=0.0, specific_yield_kwh_per_kwc_year=1200.0, capex_eur=None),
-        BatteryConfig(capacity_kwh=5.0, charge_power_kw=2.5, discharge_power_kw=2.5, roundtrip_efficiency=0.9, min_soc_pct=10.0, capex_eur=None),
+        BatteryConfig(
+            capacity_kwh=5.0,
+            charge_power_kw=2.5,
+            discharge_power_kw=2.5,
+            roundtrip_efficiency=0.9,
+            min_soc_pct=10.0,
+            capex_eur=None,
+        ),
     )
 
     assert result.pv_generated_kwh == pytest.approx(0.0)
@@ -103,13 +176,27 @@ def test_simulation_with_pv_and_battery_improves_over_pv_only() -> None:
         annualized,
         tariff,
         solar,
-        BatteryConfig(capacity_kwh=0.0, charge_power_kw=0.0, discharge_power_kw=0.0, roundtrip_efficiency=0.9, min_soc_pct=0.0, capex_eur=None),
+        BatteryConfig(
+            capacity_kwh=0.0,
+            charge_power_kw=0.0,
+            discharge_power_kw=0.0,
+            roundtrip_efficiency=0.9,
+            min_soc_pct=0.0,
+            capex_eur=None,
+        ),
     )
-    pv_battery, _ = simulate_pv_battery(
+    pv_battery, simulation_df = simulate_pv_battery(
         annualized,
         tariff,
         solar,
-        BatteryConfig(capacity_kwh=5.0, charge_power_kw=2.5, discharge_power_kw=2.5, roundtrip_efficiency=0.9, min_soc_pct=10.0, capex_eur=3500.0),
+        BatteryConfig(
+            capacity_kwh=5.0,
+            charge_power_kw=2.5,
+            discharge_power_kw=2.5,
+            roundtrip_efficiency=0.9,
+            min_soc_pct=10.0,
+            capex_eur=3500.0,
+        ),
     )
 
     assert pv_only.pv_generated_kwh == pytest.approx(7200.0)
@@ -118,6 +205,8 @@ def test_simulation_with_pv_and_battery_improves_over_pv_only() -> None:
     assert pv_battery.battery_charge_kwh > 0
     assert pv_battery.battery_discharge_kwh > 0
     assert pv_battery.annual_savings_eur > pv_only.annual_savings_eur
+    assert simulation_df["soc_kwh"].min() >= 0.5 - 1e-9
+    assert simulation_df["soc_kwh"].max() <= 5.0 + 1e-9
 
 
 def test_payback_hidden_when_costs_missing() -> None:
@@ -127,7 +216,14 @@ def test_payback_hidden_when_costs_missing() -> None:
         annualized,
         TariffConfig(base_rate_eur_kwh=0.25),
         SolarConfig(pv_kwc=6.0, specific_yield_kwh_per_kwc_year=1200.0, capex_eur=None),
-        BatteryConfig(capacity_kwh=5.0, charge_power_kw=2.5, discharge_power_kw=2.5, roundtrip_efficiency=0.9, min_soc_pct=10.0, capex_eur=None),
+        BatteryConfig(
+            capacity_kwh=5.0,
+            charge_power_kw=2.5,
+            discharge_power_kw=2.5,
+            roundtrip_efficiency=0.9,
+            min_soc_pct=10.0,
+            capex_eur=None,
+        ),
     )
 
     assert result.annual_savings_eur > 0

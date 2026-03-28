@@ -16,7 +16,7 @@ from conso_app.ui import ConsumptionMainWindow
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-REAL_CSV_PATH = PROJECT_ROOT / "112486686-DUBOIS-NICOLAS heure.csv"
+REAL_CSV_PATH = PROJECT_ROOT / "112486686.csv"
 
 
 @pytest.fixture()
@@ -34,6 +34,7 @@ def test_main_window_loads_csv_and_refreshes(qapp: QApplication) -> None:
     assert window.raw_df is not None
     assert window.analysis_summary is not None
     assert window.simulation_result is not None
+    assert window.current_file_path == REAL_CSV_PATH
     assert window.kpi_labels["total"].text() != "—"
 
     window.day_start_edit.setTime(QTime(8, 0))

@@ -1,36 +1,17 @@
 # Analyse de consommation électrique
 
-Application bureau en `PyQt6` pour analyser un export de consommation électrique au pas de 30 minutes, filtrer la période jour/nuit, visualiser les données et simuler la rentabilité d'une installation photovoltaïque avec batterie.
+Application bureau en `PyQt6` pour analyser un export de consommation électrique au pas de 30 minutes, filtrer une plage de dates, visualiser les usages et simuler une installation photovoltaïque avec batterie.
 
-L'interface utilise un thème sombre et s'appuie sur `pandas`, `numpy` et `matplotlib`.
+L’application s’appuie sur `pandas`, `numpy` et `matplotlib`, avec une structure refactorisée pour garder la logique métier et l’interface nettement plus lisibles.
 
 ## Fonctionnalités
 
-- chargement d'un fichier CSV au format `Énergie;Date;Consommation`
-- affichage de KPI de consommation et coût estimé au tarif base
-- visualisations:
-  - consommation journalière
-  - totaux mensuels
-  - profil horaire moyen
-- filtres:
-  - plage de dates
-  - découpage jour/nuit paramétrable
-- simulation photovoltaïque + batterie:
-  - puissance PV en `kWc`
-  - productible annuel en `kWh/kWc/an`
-  - coût PV
-  - capacité batterie en `kWh`
-  - puissance de charge/décharge
-  - rendement aller-retour
-  - SOC minimum
-  - coût batterie
-- calcul des indicateurs:
-  - énergie réseau avant/après
-  - coût avant/après
-  - économies annuelles
-  - taux d'autoconsommation
-  - taux d'autonomie
-  - retour sur investissement simple
+- chargement d’un fichier CSV au format `Énergie;Date;Consommation`
+- affichage de KPI de consommation et de coût estimé au tarif base
+- visualisations de consommation journalière, mensuelle et du profil horaire moyen
+- filtres par plage de dates et découpage jour/nuit paramétrable
+- simulation PV + batterie avec estimation des économies annuelles
+- annualisation d’un historique partiel pour produire une année complète de simulation
 
 ## Prérequis
 
@@ -39,21 +20,19 @@ L'interface utilise un thème sombre et s'appuie sur `pandas`, `numpy` et `matpl
 
 ## Installation
 
-Installer les dépendances:
-
 ```bash
 python -m pip install -r requirements.txt
 ```
 
 ## Lancement
 
-Depuis le dossier du projet:
+Depuis la racine du projet :
 
 ```bash
 python main.py
 ```
 
-Ou en précisant un CSV particulier:
+Ou avec un fichier précis :
 
 ```bash
 python main.py "C:\Users\Nico\Desktop\Consommation electrique\112486686.csv"
@@ -61,13 +40,13 @@ python main.py "C:\Users\Nico\Desktop\Consommation electrique\112486686.csv"
 
 ## Format CSV attendu
 
-Le fichier doit contenir les colonnes suivantes:
+Colonnes obligatoires :
 
 - `Énergie`
 - `Date`
 - `Consommation`
 
-Exemple:
+Exemple :
 
 ```csv
 Énergie;Date;Consommation
@@ -75,23 +54,23 @@ Exemple:
 Électricité;"19/06/2025 09:00:00";"0.140 kWh"
 ```
 
+Le chargeur tolère aussi l’ancienne variante de texte corrompu si un export historique en contient encore.
+
 ## Utilisation
 
-1. Ouvrir l'application.
-2. Charger un fichier CSV avec le bouton `Parcourir…` ou lancer `main.py` avec le chemin du fichier.
-3. Vérifier les KPI et les graphiques dans `Vue globale`.
-4. Ajuster les dates et le découpage `jour/nuit` dans l'onglet `Filtres`.
-5. Renseigner les paramètres PV et batterie dans l'onglet `Simulation`.
-6. Lire les économies annuelles et le retour simple.
+1. Ouvrir l’application.
+2. Charger un CSV avec `Parcourir…` ou lancer `main.py` avec un chemin de fichier.
+3. Lire les KPI et la `Vue globale`.
+4. Ajuster les dates et le découpage jour/nuit dans `Filtres`.
+5. Régler les paramètres PV et batterie dans `Simulation`.
+6. Lire les économies annuelles, l’autonomie et le retour simple.
 
 ## Hypothèses de simulation
 
-La simulation est indicative, pas une étude photovoltaïque bancaire ou installateur.
-
-- tarif v1: `Base`
+- tarif v1 : `Base`
 - pas de revente de surplus
 - pas de charge batterie depuis le réseau
-- pas d'arbitrage tarifaire
+- pas d’arbitrage tarifaire
 - pas de météo réelle
 - production PV répartie avec des coefficients mensuels fixes
 - profil intra-journalier PV reconstruit avec une courbe sinusoïdale
@@ -99,10 +78,14 @@ La simulation est indicative, pas une étude photovoltaïque bancaire ou install
 
 ## Tests
 
-Lancer les tests:
+Les deux commandes suivantes doivent fonctionner depuis la racine du dépôt :
 
 ```bash
 python -m pytest -q
+```
+
+```bash
+pytest -q
 ```
 
 ## Structure du projet
@@ -114,19 +97,23 @@ python -m pytest -q
 |-- requirements.txt
 |-- 112486686.csv
 |-- conso_app/
-|   |-- analysis.py
+|   |-- __init__.py
 |   |-- models.py
 |   |-- theme.py
-|   `-- ui.py
+|   |-- analysis/
+|   |   |-- __init__.py
+|   |   |-- csv_loader.py
+|   |   |-- analyzer.py
+|   |   |-- annualizer.py
+|   |   `-- simulation.py
+|   `-- ui/
+|       |-- __init__.py
+|       |-- main_window.py
+|       |-- controls.py
+|       |-- simulation_panel.py
+|       `-- charts.py
 `-- tests/
+    |-- conftest.py
     |-- test_analysis.py
     `-- test_ui.py
 ```
-
-## Fichiers principaux
-
-- `main.py`: point d'entrée de l'application
-- `conso_app/ui.py`: interface PyQt
-- `conso_app/analysis.py`: import CSV, agrégats, annualisation et simulation
-- `conso_app/theme.py`: thème sombre global et style des graphiques
-- `tests/`: tests unitaires et smoke test UI
