@@ -64,6 +64,15 @@ QPushButton:hover {{
 QPushButton:pressed {{
     background-color: #1d2a40;
 }}
+QPushButton:checked {{
+    background-color: #36557f;
+    border-color: {ACCENT_BLUE};
+}}
+QPushButton:disabled {{
+    color: #71839c;
+    background-color: #1a2332;
+    border-color: #263346;
+}}
 QTabWidget::pane {{
     border: 1px solid {BORDER_COLOR};
     border-radius: 12px;

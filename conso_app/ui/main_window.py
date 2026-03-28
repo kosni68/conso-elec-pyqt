@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PyQt6.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox, QTabWidget, QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QFileDialog, QFrame, QMainWindow, QMessageBox, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
 from ..analysis import ConsumptionAnalyzer, ConsumptionAnnualizer, ConsumptionCsvLoader, PvBatterySimulator
 from ..models import BatteryConfig, SolarConfig, TariffConfig
@@ -71,6 +72,7 @@ class ConsumptionMainWindow(QMainWindow):
 
         self.kpi_panel = KpiPanel()
         self.overview_chart = OverviewChartView()
+        self.overview_chart.status_message_changed.connect(self.statusBar().showMessage)
         self.filter_panel = FilterPanel()
         self.filter_panel.apply_requested.connect(self.refresh_analysis)
         self.filter_panel.reset_requested.connect(self.reset_filters)
@@ -78,12 +80,14 @@ class ConsumptionMainWindow(QMainWindow):
         self.simulation_panel = SimulationPanel()
         self.simulation_panel.run_requested.connect(self.run_simulation)
         self.simulation_chart = SimulationChartView()
+        self.simulation_chart.status_message_changed.connect(self.statusBar().showMessage)
 
         self.filter_panel.base_rate_changed.connect(self.simulation_panel.set_base_rate)
         self.simulation_panel.base_rate_changed.connect(self.filter_panel.set_base_rate)
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(self.overview_chart, "Vue globale")
+        self.overview_scroll_area = self._wrap_scrollable(self.overview_chart)
+        self.tabs.addTab(self.overview_scroll_area, "Vue globale")
         self.tabs.addTab(self.filter_panel, "Filtres")
         self.tabs.addTab(self._build_simulation_tab(), "Simulation")
 
@@ -101,6 +105,15 @@ class ConsumptionMainWindow(QMainWindow):
         layout.addWidget(self.simulation_panel)
         layout.addWidget(self.simulation_chart)
         return tab
+
+    def _wrap_scrollable(self, widget: QWidget) -> QScrollArea:
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(widget)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        return scroll_area
 
     def _expose_legacy_widget_aliases(self) -> None:
         self.file_path_edit = self.file_selection_bar.file_path_edit
@@ -127,6 +140,8 @@ class ConsumptionMainWindow(QMainWindow):
         self.overview_note_label = self.overview_chart.note_label
         self.overview_canvas = self.overview_chart.canvas
         self.simulation_canvas = self.simulation_chart.canvas
+        self.overview_toolbar = self.overview_chart.toolbar
+        self.simulation_toolbar = self.simulation_chart.toolbar
 
     def browse_file(self) -> None:
         start_directory = self.current_file_path.parent if self.current_file_path else Path.cwd()

@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pytest
+from matplotlib.backend_bases import KeyEvent, MouseButton, MouseEvent, PickEvent
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -27,15 +28,36 @@ def qapp() -> QApplication:
     return app
 
 
-def test_main_window_loads_csv_and_refreshes(qapp: QApplication) -> None:
+@pytest.fixture()
+def loaded_window(qapp: QApplication) -> ConsumptionMainWindow:
     window = ConsumptionMainWindow(initial_csv_path=REAL_CSV_PATH)
     qapp.processEvents()
+    yield window
+    window.close()
+
+
+def _dispatch_mouse_event(canvas, name: str, axis, x_value: float, y_value: float, **kwargs):
+    pixel_x, pixel_y = axis.transData.transform((x_value, y_value))
+    event = MouseEvent(name, canvas, pixel_x, pixel_y, **kwargs)
+    canvas.callbacks.process(name, event)
+    return event
+
+
+def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    window = loaded_window
 
     assert window.raw_df is not None
     assert window.analysis_summary is not None
     assert window.simulation_result is not None
     assert window.current_file_path == REAL_CSV_PATH
     assert window.kpi_labels["total"].text() != "—"
+    assert set(window.overview_toolbar.button_map) == {"home", "back", "forward", "pan", "zoom", "reset", "save"}
+    assert set(window.simulation_toolbar.button_map) == {"home", "back", "forward", "pan", "zoom", "reset", "save"}
+    assert window.overview_scroll_area.widget() is window.overview_chart
+    assert len(window.overview_chart.plot_axes) == 3
+    assert len(window.simulation_chart.plot_axes) == 1
+    assert window.simulation_toolbar.button_map["pan"].isEnabled() is False
+    assert window.simulation_toolbar.button_map["zoom"].isEnabled() is False
 
     window.day_start_edit.setTime(QTime(8, 0))
     window.day_end_edit.setTime(QTime(20, 0))
@@ -46,4 +68,147 @@ def test_main_window_loads_csv_and_refreshes(qapp: QApplication) -> None:
     assert window.simulation_labels["savings"].text() != "—"
     assert window.base_rate_filter_spin.value() == pytest.approx(window.base_rate_sim_spin.value())
 
-    window.close()
+
+def test_overview_chart_hover_zoom_and_reset(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    overview = loaded_window.overview_chart
+    axis = overview.plot_axes[0]
+    overview.canvas.draw()
+    qapp.processEvents()
+
+    x_value = overview._daily_data["x_values"][0]
+    y_value = overview._daily_data["y_values"][0]
+    initial_xlim = axis.get_xlim()
+
+    _dispatch_mouse_event(overview.canvas, "motion_notify_event", axis, x_value, y_value)
+    qapp.processEvents()
+
+    annotation = overview.tooltip_annotations[axis]
+    assert annotation.get_visible() is True
+    assert "Consommation" in annotation.get_text()
+
+    _dispatch_mouse_event(
+        overview.canvas,
+        "scroll_event",
+        axis,
+        x_value,
+        y_value,
+        button="up",
+        step=1,
+    )
+    qapp.processEvents()
+
+    zoomed_xlim = axis.get_xlim()
+    assert (zoomed_xlim[1] - zoomed_xlim[0]) < (initial_xlim[1] - initial_xlim[0])
+
+    _dispatch_mouse_event(
+        overview.canvas,
+        "button_press_event",
+        axis,
+        x_value,
+        y_value,
+        button=MouseButton.LEFT,
+        dblclick=True,
+    )
+    qapp.processEvents()
+
+    reset_xlim = axis.get_xlim()
+    assert reset_xlim == pytest.approx(initial_xlim)
+
+
+def test_overview_chart_navigation_is_limited_to_daily_axis(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    overview = loaded_window.overview_chart
+    daily_axis = overview.plot_axes[0]
+    monthly_axis = overview.plot_axes[1]
+    overview.canvas.draw()
+    qapp.processEvents()
+
+    daily_initial_xlim = daily_axis.get_xlim()
+    monthly_initial_xlim = monthly_axis.get_xlim()
+
+    _dispatch_mouse_event(
+        overview.canvas,
+        "scroll_event",
+        monthly_axis,
+        0.0,
+        float(max(monthly_axis.get_ylim()) / 2.0),
+        button="up",
+        step=1,
+    )
+    qapp.processEvents()
+
+    assert monthly_axis.get_xlim() == pytest.approx(monthly_initial_xlim)
+    assert daily_axis.get_xlim() == pytest.approx(daily_initial_xlim)
+
+    overview.toolbar.button_map["pan"].click()
+    qapp.processEvents()
+
+    start_x = overview._daily_data["x_values"][5]
+    start_y = overview._daily_data["y_values"][5]
+    initial_ylim = daily_axis.get_ylim()
+    _dispatch_mouse_event(
+        overview.canvas,
+        "button_press_event",
+        daily_axis,
+        start_x,
+        start_y,
+        button=MouseButton.LEFT,
+    )
+    _dispatch_mouse_event(
+        overview.canvas,
+        "motion_notify_event",
+        daily_axis,
+        start_x + 2.0,
+        start_y + 3.0,
+        button=MouseButton.LEFT,
+    )
+    _dispatch_mouse_event(
+        overview.canvas,
+        "button_release_event",
+        daily_axis,
+        start_x + 2.0,
+        start_y + 3.0,
+        button=MouseButton.LEFT,
+    )
+    qapp.processEvents()
+
+    assert daily_axis.get_xlim() != pytest.approx(daily_initial_xlim)
+    assert daily_axis.get_ylim() == pytest.approx(initial_ylim)
+
+
+def test_escape_leaves_zoom_mode(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    overview = loaded_window.overview_chart
+    overview.toolbar.button_map["zoom"].click()
+    qapp.processEvents()
+
+    assert overview.current_mode == "zoom"
+
+    event = KeyEvent("key_press_event", overview.canvas, "escape")
+    overview.canvas.callbacks.process("key_press_event", event)
+    qapp.processEvents()
+
+    assert overview.current_mode == "inspect"
+    assert overview.toolbar.button_map["zoom"].isChecked() is False
+
+
+def test_simulation_chart_legend_toggle(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    simulation = loaded_window.simulation_chart
+    simulation.canvas.draw()
+    qapp.processEvents()
+
+    legend_text = simulation._legend.get_texts()[2]
+    pv_line = simulation._pv_line
+    assert pv_line is not None and pv_line.get_visible() is True
+
+    mouse_event = MouseEvent("button_press_event", simulation.canvas, 0, 0, button=MouseButton.LEFT)
+    pick_event = PickEvent("pick_event", simulation.canvas, mouse_event, legend_text)
+    simulation.canvas.callbacks.process("pick_event", pick_event)
+    qapp.processEvents()
+
+    assert pv_line.get_visible() is False
+    assert legend_text.get_alpha() == pytest.approx(0.45)
+
+    simulation.canvas.callbacks.process("pick_event", pick_event)
+    qapp.processEvents()
+
+    assert pv_line.get_visible() is True
+    assert legend_text.get_alpha() == pytest.approx(1.0)
