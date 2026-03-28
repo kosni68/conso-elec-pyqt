@@ -1,0 +1,5 @@
+PyQt6>=6.7
+pandas>=2.2
+numpy>=2.2
+matplotlib>=3.10
+pytest>=8.3
