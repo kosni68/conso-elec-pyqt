@@ -197,7 +197,7 @@ def test_simulation_chart_legend_toggle(loaded_window: ConsumptionMainWindow, qa
     simulation.canvas.draw()
     qapp.processEvents()
 
-    legend_text = simulation._legend.get_texts()[2]
+    legend_text = simulation._legend.get_texts()[3]
     pv_line = simulation._pv_line
     assert pv_line is not None and pv_line.get_visible() is True
 
@@ -214,3 +214,97 @@ def test_simulation_chart_legend_toggle(loaded_window: ConsumptionMainWindow, qa
 
     assert pv_line.get_visible() is True
     assert legend_text.get_alpha() == pytest.approx(1.0)
+
+
+def test_simulation_chart_surplus_bars_are_negative_and_hoverable(
+    loaded_window: ConsumptionMainWindow,
+    qapp: QApplication,
+) -> None:
+    simulation = loaded_window.simulation_chart
+    axis = simulation.plot_axes[0]
+    simulation.canvas.draw()
+    qapp.processEvents()
+
+    assert "curtailed_kwh" in simulation._monthly_summary.columns
+    assert any(value > 0 for value in simulation._monthly_summary["curtailed_kwh"].tolist())
+    surplus_index = next(
+        index
+        for index, value in enumerate(simulation._monthly_summary["curtailed_kwh"].tolist())
+        if value > 0
+    )
+    surplus_bar = simulation._curtailed_bars[surplus_index]
+
+    assert surplus_bar.get_height() < 0
+    assert surplus_bar.get_height() == pytest.approx(-simulation._monthly_summary["curtailed_kwh"].iloc[surplus_index])
+
+    x_value = surplus_bar.get_x() + (surplus_bar.get_width() / 2)
+    y_value = surplus_bar.get_y() + (surplus_bar.get_height() / 2)
+    _dispatch_mouse_event(simulation.canvas, "motion_notify_event", axis, x_value, y_value)
+    qapp.processEvents()
+
+    annotation = simulation.tooltip_annotations[axis]
+    assert annotation.get_visible() is True
+    assert "Surplus perdu" in annotation.get_text()
+    assert "-" in annotation.get_text()
+
+
+def test_simulation_chart_surplus_legend_toggle(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    simulation = loaded_window.simulation_chart
+    simulation.canvas.draw()
+    qapp.processEvents()
+
+    legend_text = simulation._legend.get_texts()[2]
+    assert any(bar.get_visible() for bar in simulation._curtailed_bars)
+
+    mouse_event = MouseEvent("button_press_event", simulation.canvas, 0, 0, button=MouseButton.LEFT)
+    pick_event = PickEvent("pick_event", simulation.canvas, mouse_event, legend_text)
+    simulation.canvas.callbacks.process("pick_event", pick_event)
+    qapp.processEvents()
+
+    assert all(not bar.get_visible() for bar in simulation._curtailed_bars)
+    assert legend_text.get_alpha() == pytest.approx(0.45)
+
+    simulation.canvas.callbacks.process("pick_event", pick_event)
+    qapp.processEvents()
+
+    assert all(bar.get_visible() for bar in simulation._curtailed_bars)
+    assert legend_text.get_alpha() == pytest.approx(1.0)
+
+
+def test_simulation_chart_hover_works_with_only_surplus_visible(
+    loaded_window: ConsumptionMainWindow,
+    qapp: QApplication,
+) -> None:
+    simulation = loaded_window.simulation_chart
+    axis = simulation.plot_axes[0]
+    simulation.canvas.draw()
+    qapp.processEvents()
+
+    mouse_event = MouseEvent("button_press_event", simulation.canvas, 0, 0, button=MouseButton.LEFT)
+    for legend_text in simulation._legend.get_texts()[0:2] + simulation._legend.get_texts()[3:4]:
+        pick_event = PickEvent("pick_event", simulation.canvas, mouse_event, legend_text)
+        simulation.canvas.callbacks.process("pick_event", pick_event)
+    qapp.processEvents()
+
+    assert all(not bar.get_visible() for bar in simulation._baseline_bars)
+    assert all(not bar.get_visible() for bar in simulation._grid_bars)
+    assert simulation._pv_line is not None and simulation._pv_line.get_visible() is False
+    assert any(bar.get_visible() for bar in simulation._curtailed_bars)
+    assert any(value > 0 for value in simulation._monthly_summary["curtailed_kwh"].tolist())
+
+    surplus_index = next(
+        index
+        for index, value in enumerate(simulation._monthly_summary["curtailed_kwh"].tolist())
+        if value > 0
+    )
+    surplus_bar = simulation._curtailed_bars[surplus_index]
+    x_value = surplus_bar.get_x() + (surplus_bar.get_width() / 2)
+    y_value = surplus_bar.get_y() + (surplus_bar.get_height() / 2)
+    _dispatch_mouse_event(simulation.canvas, "motion_notify_event", axis, x_value, y_value)
+    qapp.processEvents()
+
+    annotation = simulation.tooltip_annotations[axis]
+    assert annotation.get_visible() is True
+    assert "Surplus perdu" in annotation.get_text()
+    assert "Charge" not in annotation.get_text()
+    assert "Production PV" not in annotation.get_text()

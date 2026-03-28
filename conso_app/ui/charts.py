@@ -832,6 +832,7 @@ class SimulationChartView(InteractiveChartView):
         self._monthly_summary = None
         self._baseline_bars: list[Rectangle] = []
         self._grid_bars: list[Rectangle] = []
+        self._curtailed_bars: list[Rectangle] = []
         self._pv_line: Line2D | None = None
         self._pv_highlight: Line2D | None = None
         self._legend = None
@@ -848,6 +849,7 @@ class SimulationChartView(InteractiveChartView):
         self._monthly_summary = None
         self._baseline_bars = []
         self._grid_bars = []
+        self._curtailed_bars = []
         self._pv_line = None
         self._pv_highlight = None
         self._legend = None
@@ -864,24 +866,32 @@ class SimulationChartView(InteractiveChartView):
             baseline_kwh=("consumption_kwh", "sum"),
             grid_kwh=("grid_kwh", "sum"),
             pv_kwh=("pv_generation_kwh", "sum"),
+            curtailed_kwh=("curtailed_pv_kwh", "sum"),
         )
         positions = np.arange(len(monthly), dtype=float)
-        width = 0.34
+        width = 0.24
         labels = [timestamp.strftime("%b %Y") for timestamp in monthly.index]
 
         baseline_container = axis.bar(
-            positions - width / 2,
+            positions - width,
             monthly["baseline_kwh"],
             width=width,
             color=ACCENT_BLUE,
             label="Charge",
         )
         grid_container = axis.bar(
-            positions + width / 2,
+            positions,
             monthly["grid_kwh"],
             width=width,
             color=ACCENT_ORANGE,
             label="Réseau après simulation",
+        )
+        curtailed_container = axis.bar(
+            positions + width,
+            -monthly["curtailed_kwh"],
+            width=width,
+            color=ACCENT_GREEN,
+            label="Surplus perdu",
         )
         self._pv_line, = axis.plot(
             positions,
@@ -891,6 +901,7 @@ class SimulationChartView(InteractiveChartView):
             linewidth=2,
             label="Production PV",
         )
+        axis.axhline(0.0, color=BORDER_COLOR, linewidth=1.1, alpha=0.9)
         axis.set_xticks(positions)
         axis.set_xticklabels(labels, rotation=35)
         axis.set_ylabel("kWh / mois")
@@ -912,6 +923,7 @@ class SimulationChartView(InteractiveChartView):
         self._style_legend(self._legend)
         self._baseline_bars = list(baseline_container)
         self._grid_bars = list(grid_container)
+        self._curtailed_bars = list(curtailed_container)
         self._monthly_summary = monthly
 
         self._set_plot_axes([axis])
@@ -920,6 +932,7 @@ class SimulationChartView(InteractiveChartView):
         group_specs = [
             ("baseline", self._baseline_bars),
             ("grid", self._grid_bars),
+            ("curtailed", self._curtailed_bars),
             ("pv", [self._pv_line]),
         ]
         for (key, artists), legend_handle, legend_text in zip(group_specs, legend_handles, legend_texts, strict=False):
@@ -945,9 +958,30 @@ class SimulationChartView(InteractiveChartView):
             return float(self._monthly_summary["baseline_kwh"].iloc[index])
         if key == "grid" and any(bar.get_visible() for bar in self._grid_bars):
             return float(self._monthly_summary["grid_kwh"].iloc[index])
+        if key == "curtailed" and any(bar.get_visible() for bar in self._curtailed_bars):
+            return float(self._monthly_summary["curtailed_kwh"].iloc[index])
         if key == "pv" and self._pv_line is not None and self._pv_line.get_visible():
             return float(self._monthly_summary["pv_kwh"].iloc[index])
         return None
+
+    @staticmethod
+    def _tooltip_anchor_y(
+        *,
+        preferred_series: str | None,
+        baseline_value: float | None,
+        grid_value: float | None,
+        pv_value: float | None,
+        curtailed_value: float | None,
+    ) -> float:
+        negative_curtailed = -curtailed_value if curtailed_value is not None else None
+        positive_values = [value for value in (baseline_value, grid_value, pv_value) if value is not None]
+        if preferred_series == "curtailed" and negative_curtailed is not None:
+            return negative_curtailed
+        if positive_values:
+            return max(positive_values)
+        if negative_curtailed is not None:
+            return negative_curtailed
+        return 0.0
 
     def _update_hover(self, event) -> bool:
         if event.inaxes is None or self._monthly_summary is None:
@@ -956,9 +990,18 @@ class SimulationChartView(InteractiveChartView):
         if event.inaxes is not axis:
             return False
 
+        preferred_series: str | None = None
         bar_index = find_bar_index(event.xdata, event.ydata, self._baseline_bars)
+        if bar_index is not None:
+            preferred_series = "baseline"
         if bar_index is None:
             bar_index = find_bar_index(event.xdata, event.ydata, self._grid_bars)
+            if bar_index is not None:
+                preferred_series = "grid"
+        if bar_index is None:
+            bar_index = find_bar_index(event.xdata, event.ydata, self._curtailed_bars)
+            if bar_index is not None:
+                preferred_series = "curtailed"
         if bar_index is None:
             bar_index = find_nearest_x_index(axis, event.xdata, np.arange(len(self._monthly_summary), dtype=float))
         if bar_index is None:
@@ -968,26 +1011,33 @@ class SimulationChartView(InteractiveChartView):
         baseline_value = self._visible_group_value("baseline", bar_index)
         grid_value = self._visible_group_value("grid", bar_index)
         pv_value = self._visible_group_value("pv", bar_index)
-        if baseline_value is None and grid_value is None and pv_value is None:
+        curtailed_value = self._visible_group_value("curtailed", bar_index)
+        if baseline_value is None and grid_value is None and pv_value is None and curtailed_value is None:
             return False
 
         self._highlight_simulation_month(bar_index)
-        tooltip_y = max(value for value in [baseline_value, grid_value, pv_value] if value is not None)
+        tooltip_y = self._tooltip_anchor_y(
+            preferred_series=preferred_series,
+            baseline_value=baseline_value,
+            grid_value=grid_value,
+            pv_value=pv_value,
+            curtailed_value=curtailed_value,
+        )
         self._show_tooltip(
             axis,
             x_value=float(bar_index),
             y_value=tooltip_y,
-            text=format_simulation_tooltip(period_label, baseline_value, grid_value, pv_value),
+            text=format_simulation_tooltip(period_label, baseline_value, grid_value, pv_value, curtailed_value),
         )
         return True
 
     def _highlight_simulation_month(self, index: int) -> None:
-        for bar in self._baseline_bars + self._grid_bars:
+        for bar in self._baseline_bars + self._grid_bars + self._curtailed_bars:
             bar.set_linewidth(0.0)
             bar.set_edgecolor(BORDER_COLOR)
             bar.set_alpha(0.9 if bar.get_visible() else 0.0)
 
-        for bar_group in (self._baseline_bars, self._grid_bars):
+        for bar_group in (self._baseline_bars, self._grid_bars, self._curtailed_bars):
             if index < len(bar_group) and bar_group[index].get_visible():
                 bar_group[index].set_linewidth(1.8)
                 bar_group[index].set_edgecolor(TEXT_PRIMARY)
@@ -1002,7 +1052,7 @@ class SimulationChartView(InteractiveChartView):
             self._pv_highlight.set_visible(False)
 
     def _clear_hover_artists(self) -> None:
-        for bar in self._baseline_bars + self._grid_bars:
+        for bar in self._baseline_bars + self._grid_bars + self._curtailed_bars:
             bar.set_linewidth(0.0)
             bar.set_edgecolor(BORDER_COLOR)
             if bar.get_visible():

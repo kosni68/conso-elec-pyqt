@@ -99,6 +99,7 @@ def format_simulation_tooltip(
     baseline_kwh: float | None,
     grid_kwh: float | None,
     pv_kwh: float | None,
+    curtailed_kwh: float | None = None,
 ) -> str:
     lines = [period_label]
     if baseline_kwh is not None:
@@ -107,6 +108,8 @@ def format_simulation_tooltip(
         lines.append(f"Réseau après simulation: {format_kwh(grid_kwh)}")
     if pv_kwh is not None:
         lines.append(f"Production PV: {format_kwh(pv_kwh)}")
+    if curtailed_kwh is not None:
+        lines.append(f"Surplus perdu: {format_kwh(-curtailed_kwh)}")
     if baseline_kwh is not None and grid_kwh is not None:
         lines.append(f"Réduction réseau: {format_kwh(max(0.0, baseline_kwh - grid_kwh))}")
     return "\n".join(lines)

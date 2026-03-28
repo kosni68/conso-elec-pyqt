@@ -205,6 +205,8 @@ def test_simulation_with_pv_and_battery_improves_over_pv_only() -> None:
     assert pv_battery.battery_charge_kwh > 0
     assert pv_battery.battery_discharge_kwh > 0
     assert pv_battery.annual_savings_eur > pv_only.annual_savings_eur
+    assert simulation_df["curtailed_pv_kwh"].sum() == pytest.approx(pv_battery.curtailed_pv_kwh)
+    assert (simulation_df["curtailed_pv_kwh"] >= 0).all()
     assert simulation_df["soc_kwh"].min() >= 0.5 - 1e-9
     assert simulation_df["soc_kwh"].max() <= 5.0 + 1e-9
 
