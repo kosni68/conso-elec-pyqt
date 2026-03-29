@@ -6,6 +6,7 @@ from conso_app.ui.chart_utils import (
     find_bar_index,
     find_nearest_line_point,
     find_nearest_x_index,
+    format_comparison_tooltip,
     format_hourly_profile_tooltip,
     format_simulation_tooltip,
 )
@@ -47,6 +48,11 @@ def test_find_bar_index_returns_hovered_bar() -> None:
 def test_tooltip_formatters_include_main_metrics() -> None:
     hourly = format_hourly_profile_tooltip("07:00", 1.234)
     simulation = format_simulation_tooltip("Jan 2026", 120.0, 80.0, 60.0, 15.5, 22.0)
+    comparison = format_comparison_tooltip(
+        "Jan 2026",
+        120.0,
+        [("Simulation 1", 80.0), ("Simulation 2", 65.0), ("Simulation 3", 50.0)],
+    )
 
     assert "07:00" in hourly
     assert "Profil moyen" in hourly
@@ -56,3 +62,5 @@ def test_tooltip_formatters_include_main_metrics() -> None:
     assert "-15,50 kWh" in simulation
     assert "Réseau après simulation" in simulation
     assert "Réduction réseau" in simulation
+    assert "Simulation 1" in comparison
+    assert "Simulation 3" in comparison

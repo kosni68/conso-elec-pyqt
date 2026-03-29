@@ -116,3 +116,16 @@ def format_simulation_tooltip(
     if baseline_kwh is not None and grid_kwh is not None:
         lines.append(f"Réduction réseau: {format_kwh(max(0.0, baseline_kwh - grid_kwh))}")
     return "\n".join(lines)
+
+
+def format_comparison_tooltip(
+    period_label: str,
+    charge_kwh: float,
+    scenario_values: Sequence[tuple[str, float | None]],
+) -> str:
+    lines = [period_label, f"Charge: {format_kwh(charge_kwh)}"]
+    for scenario_label, grid_kwh in scenario_values:
+        if grid_kwh is None:
+            continue
+        lines.append(f"{scenario_label}: {format_kwh(grid_kwh)}")
+    return "\n".join(lines)

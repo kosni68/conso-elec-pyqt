@@ -35,6 +35,7 @@ from .chart_utils import (
     find_bar_index,
     find_nearest_line_point,
     find_nearest_x_index,
+    format_comparison_tooltip,
     format_daily_tooltip,
     format_hourly_profile_tooltip,
     format_month_total_tooltip,
@@ -1225,3 +1226,177 @@ class SimulationChartView(InteractiveChartView):
             self.clear_hover_state()
             self._emit_status("Série mise à jour depuis la légende.")
         return toggled
+
+
+class SimulationComparisonChartView(InteractiveChartView):
+    def __init__(self, scenario_labels: dict[str, str]) -> None:
+        super().__init__(
+            height=4.5,
+            help_text="Survol riche | Zoom et pan désactivés sur ce graphique",
+            export_name="comparaison_simulations",
+        )
+        self._scenario_labels = dict(scenario_labels)
+        self._scenario_colors = {
+            "simulation_1": ACCENT_ORANGE,
+            "simulation_2": ACCENT_CYAN,
+            "simulation_3": ACCENT_GOLD,
+        }
+        self._monthly_summary = None
+        self._month_positions = np.array([], dtype=float)
+        self._charge_line: Line2D | None = None
+        self._charge_highlight: Line2D | None = None
+        self._scenario_lines: dict[str, Line2D] = {}
+        self._scenario_highlights: dict[str, Line2D] = {}
+
+    def _navigation_axes(self) -> tuple[Axes, ...]:
+        return ()
+
+    def update_comparison(self, annualized_df, simulation_frames) -> None:
+        figure = self.canvas.figure
+        figure.clear()
+        style_figure(figure)
+        axis = figure.subplots(1, 1)
+
+        self._monthly_summary = None
+        self._month_positions = np.array([], dtype=float)
+        self._charge_line = None
+        self._charge_highlight = None
+        self._scenario_lines = {}
+        self._scenario_highlights = {}
+
+        if annualized_df is None or annualized_df.empty:
+            axis.text(0.5, 0.5, "Comparaison indisponible.", ha="center", va="center")
+            axis.set_axis_off()
+            self._set_plot_axes([axis])
+            self.canvas.draw_idle()
+            return
+
+        style_axis(axis)
+        monthly = annualized_df.resample("MS").agg(charge_kwh=("consumption_kwh", "sum"))
+        for scenario_key in self._scenario_labels:
+            scenario_frame = simulation_frames.get(scenario_key)
+            column_name = f"{scenario_key}_grid_kwh"
+            if scenario_frame is None or scenario_frame.empty:
+                monthly[column_name] = np.nan
+                continue
+            monthly[column_name] = (
+                scenario_frame.resample("MS")["grid_kwh"].sum().reindex(monthly.index, fill_value=np.nan).to_numpy(dtype=float)
+            )
+
+        self._month_positions = np.arange(len(monthly), dtype=float)
+        month_labels = [timestamp.strftime("%b %Y") for timestamp in monthly.index]
+
+        self._charge_line, = axis.plot(
+            self._month_positions,
+            monthly["charge_kwh"],
+            color=ACCENT_BLUE,
+            marker="o",
+            linewidth=2.0,
+            label="Charge",
+        )
+        self._charge_highlight, = axis.plot(
+            [],
+            [],
+            marker="o",
+            linestyle="None",
+            markersize=9,
+            markerfacecolor=ACCENT_BLUE,
+            markeredgecolor=TEXT_PRIMARY,
+            markeredgewidth=1.2,
+            visible=False,
+        )
+
+        markers = {
+            "simulation_1": "o",
+            "simulation_2": "s",
+            "simulation_3": "^",
+        }
+        for scenario_key, scenario_label in self._scenario_labels.items():
+            line, = axis.plot(
+                self._month_positions,
+                monthly[f"{scenario_key}_grid_kwh"],
+                color=self._scenario_colors.get(scenario_key, ACCENT_ORANGE),
+                marker=markers.get(scenario_key, "o"),
+                linewidth=2.0,
+                label=f"{scenario_label} - Réseau",
+            )
+            highlight, = axis.plot(
+                [],
+                [],
+                marker=markers.get(scenario_key, "o"),
+                linestyle="None",
+                markersize=8,
+                markerfacecolor=self._scenario_colors.get(scenario_key, ACCENT_ORANGE),
+                markeredgecolor=TEXT_PRIMARY,
+                markeredgewidth=1.2,
+                visible=False,
+            )
+            self._scenario_lines[scenario_key] = line
+            self._scenario_highlights[scenario_key] = highlight
+
+        axis.set_xticks(self._month_positions)
+        axis.set_xticklabels(month_labels, rotation=35)
+        axis.set_ylabel("kWh / mois")
+        axis.set_title("Comparaison mensuelle des simulations")
+
+        legend = axis.legend()
+        legend.get_frame().set_facecolor(PANEL_BACKGROUND)
+        legend.get_frame().set_edgecolor(BORDER_COLOR)
+        for text in legend.get_texts():
+            text.set_color(TEXT_PRIMARY)
+
+        self._monthly_summary = monthly
+        self._set_plot_axes([axis])
+        self.canvas.draw_idle()
+
+    def _update_hover(self, event) -> bool:
+        if event.inaxes is None or self._monthly_summary is None:
+            return False
+        axis = self.plot_axes[0]
+        if event.inaxes is not axis:
+            return False
+
+        index = find_nearest_x_index(axis, event.xdata, self._month_positions)
+        if index is None:
+            return False
+
+        charge_value = float(self._monthly_summary["charge_kwh"].iloc[index])
+        if self._charge_highlight is not None:
+            self._charge_highlight.set_data([self._month_positions[index]], [charge_value])
+            self._charge_highlight.set_visible(True)
+
+        scenario_values: list[tuple[str, float | None]] = []
+        y_candidates = [charge_value]
+        for scenario_key, scenario_label in self._scenario_labels.items():
+            value = self._monthly_summary[f"{scenario_key}_grid_kwh"].iloc[index]
+            numeric_value = float(value) if np.isfinite(value) else None
+            scenario_values.append((scenario_label, numeric_value))
+
+            highlight = self._scenario_highlights.get(scenario_key)
+            line = self._scenario_lines.get(scenario_key)
+            if highlight is None:
+                continue
+            if line is not None and line.get_visible() and numeric_value is not None:
+                highlight.set_data([self._month_positions[index]], [numeric_value])
+                highlight.set_visible(True)
+                y_candidates.append(numeric_value)
+            else:
+                highlight.set_visible(False)
+
+        self._show_tooltip(
+            axis,
+            x_value=self._month_positions[index],
+            y_value=max(y_candidates),
+            text=format_comparison_tooltip(
+                self._monthly_summary.index[index].strftime("%b %Y"),
+                charge_value,
+                scenario_values,
+            ),
+        )
+        return True
+
+    def _clear_hover_artists(self) -> None:
+        if self._charge_highlight is not None:
+            self._charge_highlight.set_visible(False)
+        for highlight in self._scenario_highlights.values():
+            highlight.set_visible(False)

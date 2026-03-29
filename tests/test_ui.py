@@ -59,6 +59,13 @@ def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindo
     assert window.simulation_result is not None
     assert window.current_file_path == REAL_CSV_PATH
     assert window.kpi_labels["total"].text() != "—"
+    assert window.simulation_subtabs.count() == 4
+    assert [window.simulation_subtabs.tabText(index) for index in range(window.simulation_subtabs.count())] == [
+        "Simulation 1",
+        "Simulation 2",
+        "Simulation 3",
+        "Comparaison",
+    ]
     assert set(window.overview_toolbar.button_map) == {
         "home",
         "back",
@@ -89,6 +96,9 @@ def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindo
     assert window.simulation_scroll_area.widget() is window.simulation_tab_content
     assert len(window.overview_chart.plot_axes) == 3
     assert len(window.simulation_chart.plot_axes) == 1
+    assert len(window.simulation_chart_2.plot_axes) == 1
+    assert len(window.simulation_chart_3.plot_axes) == 1
+    assert len(window.comparison_chart.plot_axes) == 1
     assert window.overview_toolbar.button_map["zoom_in"].isEnabled() is True
     assert window.overview_toolbar.button_map["move_left"].isEnabled() is True
     assert window.simulation_toolbar.button_map["zoom_in"].isEnabled() is False
@@ -98,6 +108,8 @@ def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindo
     assert window.simulation_scroll_area.verticalScrollBarPolicy().name == "ScrollBarAsNeeded"
     assert window.ev_enabled_checkbox.isChecked() is False
     assert window.ev_daily_energy_spin.isEnabled() is False
+    assert window.base_rate_filter_spin.value() == pytest.approx(window.simulation_panel_2.base_rate_spin.value())
+    assert window.base_rate_filter_spin.value() == pytest.approx(window.simulation_panel_3.base_rate_spin.value())
 
     window.day_start_edit.setTime(QTime(8, 0))
     window.day_end_edit.setTime(QTime(20, 0))
@@ -427,6 +439,61 @@ def test_simulation_chart_hover_works_with_only_surplus_visible(
     assert "Surplus perdu" in annotation.get_text()
     assert "Charge" not in annotation.get_text()
     assert "Production PV" not in annotation.get_text()
+
+
+def test_shared_base_rate_updates_all_simulation_tabs(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    window = loaded_window
+    window.base_rate_filter_spin.setValue(0.2234)
+    qapp.processEvents()
+
+    assert window.base_rate_sim_spin.value() == pytest.approx(0.2234)
+    assert window.simulation_panel_2.base_rate_spin.value() == pytest.approx(0.2234)
+    assert window.simulation_panel_3.base_rate_spin.value() == pytest.approx(0.2234)
+
+
+def test_comparison_view_updates_when_secondary_scenarios_change(
+    loaded_window: ConsumptionMainWindow,
+    qapp: QApplication,
+) -> None:
+    window = loaded_window
+
+    window.simulation_panel_2.pv_power_spin.setValue(0.0)
+    window.run_simulation("simulation_2")
+    qapp.processEvents()
+
+    window.simulation_panel_3.pv_power_spin.setValue(9.0)
+    window.run_simulation("simulation_3")
+    qapp.processEvents()
+
+    simulation_1_text = window.comparison_labels["simulated_grid"]["simulation_1"].text()
+    simulation_2_text = window.comparison_labels["simulated_grid"]["simulation_2"].text()
+    simulation_3_text = window.comparison_labels["simulated_grid"]["simulation_3"].text()
+
+    assert simulation_1_text != "—"
+    assert simulation_2_text != "—"
+    assert simulation_3_text != "—"
+    assert simulation_2_text != simulation_3_text
+    assert "simulation_2_grid_kwh" in window.comparison_chart._monthly_summary.columns
+    assert "simulation_3_grid_kwh" in window.comparison_chart._monthly_summary.columns
+
+
+def test_comparison_chart_hover_includes_three_scenarios(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    comparison = loaded_window.comparison_chart
+    axis = comparison.plot_axes[0]
+    comparison.canvas.draw()
+    qapp.processEvents()
+
+    x_value = float(comparison._month_positions[0])
+    y_value = float(comparison._monthly_summary["charge_kwh"].iloc[0])
+    _dispatch_mouse_event(comparison.canvas, "motion_notify_event", axis, x_value, y_value)
+    qapp.processEvents()
+
+    annotation = comparison.tooltip_annotations[axis]
+    assert annotation.get_visible() is True
+    assert "Charge" in annotation.get_text()
+    assert "Simulation 1" in annotation.get_text()
+    assert "Simulation 2" in annotation.get_text()
+    assert "Simulation 3" in annotation.get_text()
 
 
 def test_ev_controls_and_chart_update_when_ev_is_enabled(
