@@ -41,7 +41,7 @@ from .chart_utils import (
     format_simulation_tooltip,
 )
 
-DEFAULT_HELP_TEXT = "Survol: détails | Molette: zoom | Double-clic: reset | Esc: quitter pan/zoom"
+DEFAULT_HELP_TEXT = "Survol: détails | Molette: scroll | Double-clic: reset | Esc: quitter pan/zoom"
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,17 +83,22 @@ class ChartToolbar(QWidget):
 
         self.button_map: dict[str, QPushButton] = {}
         button_specs = [
-            ("home", "Accueil", False),
-            ("back", "Retour", False),
-            ("forward", "Avancer", False),
-            ("pan", "Pan", True),
-            ("zoom", "Zoom", True),
-            ("reset", "Reset", False),
-            ("save", "PNG", False),
+            ("home", "Accueil", False, "Revenir à la vue initiale"),
+            ("back", "Retour", False, "Revenir à la vue précédente"),
+            ("forward", "Avancer", False, "Aller à la vue suivante"),
+            ("zoom_in", "+", False, "Zoom avant sur la consommation journalière"),
+            ("zoom_out", "-", False, "Zoom arrière sur la consommation journalière"),
+            ("move_left", "←", False, "Déplacer la vue vers la gauche"),
+            ("move_right", "→", False, "Déplacer la vue vers la droite"),
+            ("pan", "Pan", True, "Déplacement manuel sur le graphique"),
+            ("zoom", "Zoom", True, "Zoom rectangle sur le graphique"),
+            ("reset", "Reset", False, "Réinitialiser la vue"),
+            ("save", "PNG", False, "Enregistrer le graphique en PNG"),
         ]
-        for key, label, checkable in button_specs:
+        for key, label, checkable, tooltip in button_specs:
             button = QPushButton(label)
             button.setCheckable(checkable)
+            button.setToolTip(tooltip)
             self.button_map[key] = button
             layout.addWidget(button)
 
@@ -108,7 +113,7 @@ class ChartToolbar(QWidget):
         self.button_map["forward"].setEnabled(can_go_forward)
 
     def set_navigation_enabled(self, enabled: bool) -> None:
-        for key in ("home", "back", "forward", "pan", "zoom", "reset"):
+        for key in ("home", "back", "forward", "zoom_in", "zoom_out", "move_left", "move_right", "pan", "zoom", "reset"):
             self.button_map[key].setEnabled(enabled)
 
 
@@ -120,6 +125,9 @@ class MatplotlibCanvas(FigureCanvas):
         style_figure(self.figure)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setMouseTracking(True)
+
+    def wheelEvent(self, event) -> None:  # noqa: N802 - Qt naming convention
+        event.ignore()
 
 
 class InteractiveChartView(QWidget):
@@ -245,6 +253,18 @@ class InteractiveChartView(QWidget):
         self.set_mode("inspect")
         self.clear_hover_state()
 
+    def zoom_in_view(self) -> None:
+        self._zoom_primary_axis(0.7, "Zoom avant appliqué.")
+
+    def zoom_out_view(self) -> None:
+        self._zoom_primary_axis(1.3, "Zoom arrière appliqué.")
+
+    def move_left(self) -> None:
+        self._shift_primary_axis(-0.25, "Vue déplacée vers la gauche.")
+
+    def move_right(self) -> None:
+        self._shift_primary_axis(0.25, "Vue déplacée vers la droite.")
+
     def set_mode(self, mode: str) -> None:
         normalized_mode = mode if mode in {"inspect", "pan", "zoom"} else "inspect"
         if not self._has_navigation():
@@ -286,6 +306,10 @@ class InteractiveChartView(QWidget):
         self.toolbar.button_map["home"].clicked.connect(self.home)
         self.toolbar.button_map["back"].clicked.connect(self.back)
         self.toolbar.button_map["forward"].clicked.connect(self.forward)
+        self.toolbar.button_map["zoom_in"].clicked.connect(self.zoom_in_view)
+        self.toolbar.button_map["zoom_out"].clicked.connect(self.zoom_out_view)
+        self.toolbar.button_map["move_left"].clicked.connect(self.move_left)
+        self.toolbar.button_map["move_right"].clicked.connect(self.move_right)
         self.toolbar.button_map["reset"].clicked.connect(self.reset_view)
         self.toolbar.button_map["save"].clicked.connect(self.save_png)
         self.toolbar.button_map["pan"].clicked.connect(
@@ -298,7 +322,6 @@ class InteractiveChartView(QWidget):
 
     def _connect_canvas_events(self) -> None:
         self.canvas.mpl_connect("motion_notify_event", self._on_motion)
-        self.canvas.mpl_connect("scroll_event", self._on_scroll)
         self.canvas.mpl_connect("button_press_event", self._on_button_press)
         self.canvas.mpl_connect("button_release_event", self._on_button_release)
         self.canvas.mpl_connect("figure_leave_event", self._on_figure_leave)
@@ -361,6 +384,90 @@ class InteractiveChartView(QWidget):
         self._view_history_index = len(self._view_history) - 1
         self._sync_navigation_controls()
 
+    def _primary_navigation_axis(self) -> Axes | None:
+        navigation_axes = self._navigation_axes()
+        return navigation_axes[0] if navigation_axes else None
+
+    def _base_axis_view_state(self, axis: Axes) -> AxisViewState | None:
+        if not self._view_history:
+            return None
+        try:
+            axis_index = self._plot_axes.index(axis)
+        except ValueError:
+            return None
+        if axis_index >= len(self._view_history[0]):
+            return None
+        return self._view_history[0][axis_index]
+
+    @staticmethod
+    def _clamp_x_window(center: float, span: float, bounds: tuple[float, float]) -> tuple[float, float]:
+        lower_bound, upper_bound = bounds
+        max_span = upper_bound - lower_bound
+        if max_span <= 0:
+            return bounds
+        if span >= max_span:
+            return bounds
+
+        half_span = span / 2.0
+        left = center - half_span
+        right = center + half_span
+        if left < lower_bound:
+            right += lower_bound - left
+            left = lower_bound
+        if right > upper_bound:
+            left -= right - upper_bound
+            right = upper_bound
+        return max(left, lower_bound), min(right, upper_bound)
+
+    def _zoom_primary_axis(self, scale_factor: float, status_message: str) -> None:
+        axis = self._primary_navigation_axis()
+        if axis is None:
+            return
+        base_state = self._base_axis_view_state(axis)
+        if base_state is None:
+            return
+
+        current_left, current_right = (float(value) for value in axis.get_xlim())
+        current_span = current_right - current_left
+        if current_span <= 0:
+            return
+
+        new_span = current_span * scale_factor
+        center = (current_left + current_right) / 2.0
+        new_xlim = self._clamp_x_window(center, new_span, base_state.xlim)
+        if new_xlim == (current_left, current_right):
+            return
+
+        axis.set_xlim(new_xlim)
+        self._after_view_changed()
+        self._push_current_view()
+        self.clear_hover_state()
+        self._emit_status(status_message)
+
+    def _shift_primary_axis(self, shift_ratio: float, status_message: str) -> None:
+        axis = self._primary_navigation_axis()
+        if axis is None:
+            return
+        base_state = self._base_axis_view_state(axis)
+        if base_state is None:
+            return
+
+        current_left, current_right = (float(value) for value in axis.get_xlim())
+        current_span = current_right - current_left
+        if current_span <= 0:
+            return
+
+        center = ((current_left + current_right) / 2.0) + (current_span * shift_ratio)
+        new_xlim = self._clamp_x_window(center, current_span, base_state.xlim)
+        if new_xlim == (current_left, current_right):
+            return
+
+        axis.set_xlim(new_xlim)
+        self._after_view_changed()
+        self._push_current_view()
+        self.clear_hover_state()
+        self._emit_status(status_message)
+
     def _create_tooltip(self, axis: Axes):
         annotation = axis.annotate(
             "",
@@ -418,29 +525,7 @@ class InteractiveChartView(QWidget):
             self.clear_hover_state()
 
     def _on_scroll(self, event) -> None:
-        axis = event.inaxes
-        if axis is None or not self._is_navigable_axis(axis) or event.xdata is None or event.ydata is None:
-            return
-
-        scale_factor = 1 / 1.2 if getattr(event, "step", 0) > 0 or getattr(event, "button", None) == "up" else 1.2
-        x_left, x_right = axis.get_xlim()
-        y_bottom, y_top = axis.get_ylim()
-        x_value = event.xdata
-        y_value = event.ydata
-
-        new_xlim = (
-            x_value - (x_value - x_left) * scale_factor,
-            x_value + (x_right - x_value) * scale_factor,
-        )
-        new_ylim = (
-            y_value - (y_value - y_bottom) * scale_factor,
-            y_value + (y_top - y_value) * scale_factor,
-        )
-        axis.set_xlim(new_xlim)
-        axis.set_ylim(new_ylim)
-        self._after_view_changed()
-        self._push_current_view()
-        self.canvas.draw_idle()
+        return
 
     def _on_button_press(self, event) -> None:
         self.canvas.setFocus()
@@ -608,7 +693,7 @@ class OverviewChartView(InteractiveChartView):
     def __init__(self) -> None:
         super().__init__(
             height=9.4,
-            help_text="Survol partout | Zoom, pan et déplacement horizontal uniquement sur la consommation journalière",
+            help_text="Survol partout | Molette réservée au scroll | + / - , ← / →, zoom rectangle et pan sur la consommation journalière",
             note_text="Les graphiques apparaîtront après chargement du CSV.",
             export_name="vue_globale",
         )

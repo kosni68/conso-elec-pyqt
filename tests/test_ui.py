@@ -20,6 +20,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REAL_CSV_PATH = PROJECT_ROOT / "112486686.csv"
 
 
+class DummyWheelEvent:
+    def __init__(self) -> None:
+        self.ignored = False
+
+    def ignore(self) -> None:
+        self.ignored = True
+
+
 @pytest.fixture()
 def qapp() -> QApplication:
     app = QApplication.instance()
@@ -51,12 +59,40 @@ def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindo
     assert window.simulation_result is not None
     assert window.current_file_path == REAL_CSV_PATH
     assert window.kpi_labels["total"].text() != "—"
-    assert set(window.overview_toolbar.button_map) == {"home", "back", "forward", "pan", "zoom", "reset", "save"}
-    assert set(window.simulation_toolbar.button_map) == {"home", "back", "forward", "pan", "zoom", "reset", "save"}
+    assert set(window.overview_toolbar.button_map) == {
+        "home",
+        "back",
+        "forward",
+        "zoom_in",
+        "zoom_out",
+        "move_left",
+        "move_right",
+        "pan",
+        "zoom",
+        "reset",
+        "save",
+    }
+    assert set(window.simulation_toolbar.button_map) == {
+        "home",
+        "back",
+        "forward",
+        "zoom_in",
+        "zoom_out",
+        "move_left",
+        "move_right",
+        "pan",
+        "zoom",
+        "reset",
+        "save",
+    }
     assert window.overview_scroll_area.widget() is window.overview_chart
     assert window.simulation_scroll_area.widget() is window.simulation_tab_content
     assert len(window.overview_chart.plot_axes) == 3
     assert len(window.simulation_chart.plot_axes) == 1
+    assert window.overview_toolbar.button_map["zoom_in"].isEnabled() is True
+    assert window.overview_toolbar.button_map["move_left"].isEnabled() is True
+    assert window.simulation_toolbar.button_map["zoom_in"].isEnabled() is False
+    assert window.simulation_toolbar.button_map["move_left"].isEnabled() is False
     assert window.simulation_toolbar.button_map["pan"].isEnabled() is False
     assert window.simulation_toolbar.button_map["zoom"].isEnabled() is False
     assert window.simulation_scroll_area.verticalScrollBarPolicy().name == "ScrollBarAsNeeded"
@@ -79,8 +115,10 @@ def test_overview_chart_hover_zoom_and_reset(loaded_window: ConsumptionMainWindo
     overview.canvas.draw()
     qapp.processEvents()
 
-    x_value = overview._daily_data["x_values"][0]
-    y_value = overview._daily_data["y_values"][0]
+    x_values = overview._daily_data["x_values"]
+    y_values = overview._daily_data["y_values"]
+    x_value = x_values[0]
+    y_value = y_values[0]
     initial_xlim = axis.get_xlim()
 
     _dispatch_mouse_event(overview.canvas, "motion_notify_event", axis, x_value, y_value)
@@ -90,26 +128,51 @@ def test_overview_chart_hover_zoom_and_reset(loaded_window: ConsumptionMainWindo
     assert annotation.get_visible() is True
     assert "Consommation" in annotation.get_text()
 
-    _dispatch_mouse_event(
-        overview.canvas,
-        "scroll_event",
-        axis,
-        x_value,
-        y_value,
-        button="up",
-        step=1,
-    )
+    overview.toolbar.button_map["zoom"].click()
     qapp.processEvents()
 
-    zoomed_xlim = axis.get_xlim()
-    assert (zoomed_xlim[1] - zoomed_xlim[0]) < (initial_xlim[1] - initial_xlim[0])
-
+    zoom_start_x = x_values[5]
+    zoom_end_x = x_values[20]
+    zoom_start_y = min(y_values)
+    zoom_end_y = max(y_values) * 0.8
     _dispatch_mouse_event(
         overview.canvas,
         "button_press_event",
         axis,
-        x_value,
-        y_value,
+        zoom_start_x,
+        zoom_start_y,
+        button=MouseButton.LEFT,
+    )
+    _dispatch_mouse_event(
+        overview.canvas,
+        "motion_notify_event",
+        axis,
+        zoom_end_x,
+        zoom_end_y,
+        button=MouseButton.LEFT,
+    )
+    _dispatch_mouse_event(
+        overview.canvas,
+        "button_release_event",
+        axis,
+        zoom_end_x,
+        zoom_end_y,
+        button=MouseButton.LEFT,
+    )
+    qapp.processEvents()
+
+    zoomed_xlim = axis.get_xlim()
+    zoomed_ylim = axis.get_ylim()
+    assert (zoomed_xlim[1] - zoomed_xlim[0]) < (initial_xlim[1] - initial_xlim[0])
+
+    reset_x = (zoomed_xlim[0] + zoomed_xlim[1]) / 2
+    reset_y = (zoomed_ylim[0] + zoomed_ylim[1]) / 2
+    _dispatch_mouse_event(
+        overview.canvas,
+        "button_press_event",
+        axis,
+        reset_x,
+        reset_y,
         button=MouseButton.LEFT,
         dblclick=True,
     )
@@ -117,6 +180,60 @@ def test_overview_chart_hover_zoom_and_reset(loaded_window: ConsumptionMainWindo
 
     reset_xlim = axis.get_xlim()
     assert reset_xlim == pytest.approx(initial_xlim)
+
+
+def test_input_fields_ignore_mouse_wheel(loaded_window: ConsumptionMainWindow) -> None:
+    window = loaded_window
+
+    initial_filter_rate = window.base_rate_filter_spin.value()
+    filter_rate_event = DummyWheelEvent()
+    window.base_rate_filter_spin.wheelEvent(filter_rate_event)
+    assert filter_rate_event.ignored is True
+    assert window.base_rate_filter_spin.value() == pytest.approx(initial_filter_rate)
+
+    initial_start_date = window.start_date_edit.date()
+    start_date_event = DummyWheelEvent()
+    window.start_date_edit.wheelEvent(start_date_event)
+    assert start_date_event.ignored is True
+    assert window.start_date_edit.date() == initial_start_date
+
+    initial_day_start = window.day_start_edit.time()
+    day_start_event = DummyWheelEvent()
+    window.day_start_edit.wheelEvent(day_start_event)
+    assert day_start_event.ignored is True
+    assert window.day_start_edit.time() == initial_day_start
+
+
+def test_overview_chart_toolbar_zoom_and_move_buttons(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:
+    overview = loaded_window.overview_chart
+    axis = overview.plot_axes[0]
+    overview.canvas.draw()
+    qapp.processEvents()
+
+    initial_xlim = axis.get_xlim()
+    overview.toolbar.button_map["zoom_in"].click()
+    qapp.processEvents()
+
+    zoomed_xlim = axis.get_xlim()
+    assert (zoomed_xlim[1] - zoomed_xlim[0]) < (initial_xlim[1] - initial_xlim[0])
+
+    overview.toolbar.button_map["move_right"].click()
+    qapp.processEvents()
+
+    moved_right_xlim = axis.get_xlim()
+    assert moved_right_xlim[0] > zoomed_xlim[0]
+
+    overview.toolbar.button_map["move_left"].click()
+    qapp.processEvents()
+
+    moved_left_xlim = axis.get_xlim()
+    assert moved_left_xlim[0] < moved_right_xlim[0]
+
+    overview.toolbar.button_map["zoom_out"].click()
+    qapp.processEvents()
+
+    zoomed_out_xlim = axis.get_xlim()
+    assert (zoomed_out_xlim[1] - zoomed_out_xlim[0]) > (moved_left_xlim[1] - moved_left_xlim[0])
 
 
 def test_overview_chart_navigation_is_limited_to_daily_axis(loaded_window: ConsumptionMainWindow, qapp: QApplication) -> None:

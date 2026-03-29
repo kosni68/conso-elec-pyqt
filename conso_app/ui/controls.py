@@ -5,8 +5,6 @@ from pathlib import Path
 
 from PyQt6.QtCore import QDate, QSignalBlocker, Qt, QTime, pyqtSignal
 from PyQt6.QtWidgets import (
-    QDateEdit,
-    QDoubleSpinBox,
     QFrame,
     QGridLayout,
     QGroupBox,
@@ -14,7 +12,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -23,6 +20,7 @@ from ..analysis import AnalysisSummary
 from ..models import DEFAULT_BASE_RATE_EUR_KWH, TariffConfig
 from ..theme import BORDER_COLOR, CARD_BACKGROUND, TEXT_MUTED, TEXT_PRIMARY
 from .formatting import format_currency, format_kwh, format_percent
+from .input_widgets import NoWheelDateEdit, NoWheelDoubleSpinBox, NoWheelTimeEdit
 
 EMPTY_VALUE = "—"
 
@@ -125,12 +123,12 @@ class FilterPanel(QWidget):
         controls_layout.setHorizontalSpacing(14)
         controls_layout.setVerticalSpacing(10)
 
-        self.start_date_edit = QDateEdit(calendarPopup=True)
-        self.end_date_edit = QDateEdit(calendarPopup=True)
+        self.start_date_edit = NoWheelDateEdit(calendarPopup=True)
+        self.end_date_edit = NoWheelDateEdit(calendarPopup=True)
         self.start_date_edit.setDisplayFormat("dd/MM/yyyy")
         self.end_date_edit.setDisplayFormat("dd/MM/yyyy")
-        self.day_start_edit = QTimeEdit(QTime(7, 0))
-        self.day_end_edit = QTimeEdit(QTime(22, 0))
+        self.day_start_edit = NoWheelTimeEdit(QTime(7, 0))
+        self.day_end_edit = NoWheelTimeEdit(QTime(22, 0))
         self.day_start_edit.setDisplayFormat("HH:mm")
         self.day_end_edit.setDisplayFormat("HH:mm")
         self.base_rate_spin = self._make_spinbox(0.0, 5.0, 4, DEFAULT_BASE_RATE_EUR_KWH, suffix=" €/kWh")
@@ -240,8 +238,8 @@ class FilterPanel(QWidget):
         decimals: int,
         value: float,
         suffix: str = "",
-    ) -> QDoubleSpinBox:
-        widget = QDoubleSpinBox()
+    ) -> NoWheelDoubleSpinBox:
+        widget = NoWheelDoubleSpinBox()
         widget.setRange(minimum, maximum)
         widget.setDecimals(decimals)
         widget.setValue(value)

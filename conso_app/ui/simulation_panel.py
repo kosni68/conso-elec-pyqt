@@ -1,23 +1,12 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QSignalBlocker, QTime, Qt, pyqtSignal
-from PyQt6.QtWidgets import (
-    QCheckBox,
-    QDoubleSpinBox,
-    QFormLayout,
-    QGridLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QTimeEdit,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import QCheckBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from ..models import BatteryConfig, EvChargingConfig, SolarConfig, DEFAULT_BASE_RATE_EUR_KWH
 from ..theme import TEXT_MUTED
 from .formatting import format_currency, format_kwh, format_percent, fr_number
+from .input_widgets import NoWheelDoubleSpinBox, NoWheelTimeEdit
 
 EMPTY_VALUE = "—"
 EV_DAY_LABELS = ("Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim")
@@ -228,8 +217,8 @@ class SimulationPanel(QWidget):
         decimals: int,
         value: float,
         suffix: str = "",
-    ) -> QDoubleSpinBox:
-        widget = QDoubleSpinBox()
+    ) -> NoWheelDoubleSpinBox:
+        widget = NoWheelDoubleSpinBox()
         widget.setRange(minimum, maximum)
         widget.setDecimals(decimals)
         widget.setValue(value)
@@ -239,14 +228,14 @@ class SimulationPanel(QWidget):
         return widget
 
     @staticmethod
-    def _make_time_edit(value: QTime) -> QTimeEdit:
-        widget = QTimeEdit()
+    def _make_time_edit(value: QTime) -> NoWheelTimeEdit:
+        widget = NoWheelTimeEdit()
         widget.setDisplayFormat("HH:mm")
         widget.setTime(value)
         widget.setAlignment(Qt.AlignmentFlag.AlignRight)
         return widget
 
-    def _make_optional_money_spinbox(self) -> QDoubleSpinBox:
+    def _make_optional_money_spinbox(self) -> NoWheelDoubleSpinBox:
         widget = self._make_spinbox(0.0, 100000.0, 0, 0.0, suffix=" €")
         widget.setSpecialValueText("Non renseigné")
         return widget
