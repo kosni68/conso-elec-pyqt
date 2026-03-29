@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import time
 from typing import Optional
 
-DEFAULT_BASE_RATE_EUR_KWH = 0.2516
+DEFAULT_BASE_RATE_EUR_KWH = 0.1927
 
 
 @dataclass(frozen=True, slots=True)
