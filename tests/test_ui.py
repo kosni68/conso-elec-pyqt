@@ -60,6 +60,8 @@ def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindo
     assert window.simulation_toolbar.button_map["pan"].isEnabled() is False
     assert window.simulation_toolbar.button_map["zoom"].isEnabled() is False
     assert window.simulation_scroll_area.verticalScrollBarPolicy().name == "ScrollBarAsNeeded"
+    assert window.ev_enabled_checkbox.isChecked() is False
+    assert window.ev_daily_energy_spin.isEnabled() is False
 
     window.day_start_edit.setTime(QTime(8, 0))
     window.day_end_edit.setTime(QTime(20, 0))
@@ -281,7 +283,7 @@ def test_simulation_chart_hover_works_with_only_surplus_visible(
     qapp.processEvents()
 
     mouse_event = MouseEvent("button_press_event", simulation.canvas, 0, 0, button=MouseButton.LEFT)
-    for legend_text in simulation._legend.get_texts()[0:2] + simulation._legend.get_texts()[3:4]:
+    for legend_text in simulation._legend.get_texts()[0:2] + simulation._legend.get_texts()[3:5]:
         pick_event = PickEvent("pick_event", simulation.canvas, mouse_event, legend_text)
         simulation.canvas.callbacks.process("pick_event", pick_event)
     qapp.processEvents()
@@ -308,3 +310,45 @@ def test_simulation_chart_hover_works_with_only_surplus_visible(
     assert "Surplus perdu" in annotation.get_text()
     assert "Charge" not in annotation.get_text()
     assert "Production PV" not in annotation.get_text()
+
+
+def test_ev_controls_and_chart_update_when_ev_is_enabled(
+    loaded_window: ConsumptionMainWindow,
+    qapp: QApplication,
+) -> None:
+    window = loaded_window
+    window.ev_enabled_checkbox.setChecked(True)
+    qapp.processEvents()
+
+    assert window.ev_daily_energy_spin.isEnabled() is True
+
+    window.ev_daily_energy_spin.setValue(12.0)
+    window.ev_charge_power_spin.setValue(7.4)
+    window.ev_start_time_edit.setTime(QTime(22, 0))
+    window.ev_end_time_edit.setTime(QTime(6, 0))
+    for button in window.ev_day_buttons:
+        button.setChecked(True)
+
+    window.run_simulation()
+    qapp.processEvents()
+
+    simulation = window.simulation_chart
+    axis = simulation.plot_axes[0]
+    simulation.canvas.draw()
+    qapp.processEvents()
+
+    assert window.simulation_labels["ev_charge"].text() != "â€”"
+    assert "Recharge VE activee" in window.simulation_note_label.text()
+    assert "ev_kwh" in simulation._monthly_summary.columns
+    assert simulation._monthly_summary["ev_kwh"].sum() > 0
+    assert simulation._ev_line is not None and simulation._ev_line.get_visible() is True
+
+    first_index = int(simulation._monthly_summary["ev_kwh"].to_numpy(dtype=float).argmax())
+    x_value = float(first_index)
+    y_value = float(simulation._monthly_summary["ev_kwh"].iloc[first_index])
+    _dispatch_mouse_event(simulation.canvas, "motion_notify_event", axis, x_value, y_value)
+    qapp.processEvents()
+
+    annotation = simulation.tooltip_annotations[axis]
+    assert annotation.get_visible() is True
+    assert "Recharge VE" in annotation.get_text()

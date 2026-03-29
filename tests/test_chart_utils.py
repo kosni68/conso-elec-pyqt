@@ -46,11 +46,12 @@ def test_find_bar_index_returns_hovered_bar() -> None:
 
 def test_tooltip_formatters_include_main_metrics() -> None:
     hourly = format_hourly_profile_tooltip("07:00", 1.234)
-    simulation = format_simulation_tooltip("Jan 2026", 120.0, 80.0, 60.0, 15.5)
+    simulation = format_simulation_tooltip("Jan 2026", 120.0, 80.0, 60.0, 15.5, 22.0)
 
     assert "07:00" in hourly
     assert "Profil moyen" in hourly
     assert "Charge" in simulation
+    assert "Recharge VE" in simulation
     assert "Surplus perdu" in simulation
     assert "-15,50 kWh" in simulation
     assert "Réseau après simulation" in simulation

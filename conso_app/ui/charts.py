@@ -19,6 +19,7 @@ from ..analysis import AnalysisSummary
 from ..theme import (
     ACCENT_BLUE,
     ACCENT_CYAN,
+    ACCENT_GOLD,
     ACCENT_GREEN,
     ACCENT_ORANGE,
     BORDER_COLOR,
@@ -834,7 +835,9 @@ class SimulationChartView(InteractiveChartView):
         self._grid_bars: list[Rectangle] = []
         self._curtailed_bars: list[Rectangle] = []
         self._pv_line: Line2D | None = None
+        self._ev_line: Line2D | None = None
         self._pv_highlight: Line2D | None = None
+        self._ev_highlight: Line2D | None = None
         self._legend = None
 
     def _navigation_axes(self) -> tuple[Axes, ...]:
@@ -851,7 +854,9 @@ class SimulationChartView(InteractiveChartView):
         self._grid_bars = []
         self._curtailed_bars = []
         self._pv_line = None
+        self._ev_line = None
         self._pv_highlight = None
+        self._ev_highlight = None
         self._legend = None
 
         if simulation_df is None or simulation_df.empty:
@@ -867,6 +872,7 @@ class SimulationChartView(InteractiveChartView):
             grid_kwh=("grid_kwh", "sum"),
             pv_kwh=("pv_generation_kwh", "sum"),
             curtailed_kwh=("curtailed_pv_kwh", "sum"),
+            ev_kwh=("ev_charging_kwh", "sum"),
         )
         positions = np.arange(len(monthly), dtype=float)
         width = 0.24
@@ -901,6 +907,15 @@ class SimulationChartView(InteractiveChartView):
             linewidth=2,
             label="Production PV",
         )
+        self._ev_line, = axis.plot(
+            positions,
+            monthly["ev_kwh"],
+            color=ACCENT_GOLD,
+            marker="s",
+            linestyle="--",
+            linewidth=1.8,
+            label="Recharge VE",
+        )
         axis.axhline(0.0, color=BORDER_COLOR, linewidth=1.1, alpha=0.9)
         axis.set_xticks(positions)
         axis.set_xticklabels(labels, rotation=35)
@@ -914,6 +929,17 @@ class SimulationChartView(InteractiveChartView):
             linestyle="None",
             markersize=9,
             markerfacecolor=ACCENT_CYAN,
+            markeredgecolor=TEXT_PRIMARY,
+            markeredgewidth=1.2,
+            visible=False,
+        )
+        self._ev_highlight, = axis.plot(
+            [],
+            [],
+            marker="s",
+            linestyle="None",
+            markersize=8,
+            markerfacecolor=ACCENT_GOLD,
             markeredgecolor=TEXT_PRIMARY,
             markeredgewidth=1.2,
             visible=False,
@@ -934,6 +960,7 @@ class SimulationChartView(InteractiveChartView):
             ("grid", self._grid_bars),
             ("curtailed", self._curtailed_bars),
             ("pv", [self._pv_line]),
+            ("ev", [self._ev_line]),
         ]
         for (key, artists), legend_handle, legend_text in zip(group_specs, legend_handles, legend_texts, strict=False):
             self._register_legend_group(
@@ -962,6 +989,8 @@ class SimulationChartView(InteractiveChartView):
             return float(self._monthly_summary["curtailed_kwh"].iloc[index])
         if key == "pv" and self._pv_line is not None and self._pv_line.get_visible():
             return float(self._monthly_summary["pv_kwh"].iloc[index])
+        if key == "ev" and self._ev_line is not None and self._ev_line.get_visible():
+            return float(self._monthly_summary["ev_kwh"].iloc[index])
         return None
 
     @staticmethod
@@ -972,11 +1001,16 @@ class SimulationChartView(InteractiveChartView):
         grid_value: float | None,
         pv_value: float | None,
         curtailed_value: float | None,
+        ev_value: float | None,
     ) -> float:
         negative_curtailed = -curtailed_value if curtailed_value is not None else None
-        positive_values = [value for value in (baseline_value, grid_value, pv_value) if value is not None]
+        positive_values = [value for value in (baseline_value, grid_value, pv_value, ev_value) if value is not None]
         if preferred_series == "curtailed" and negative_curtailed is not None:
             return negative_curtailed
+        if preferred_series == "pv" and pv_value is not None:
+            return pv_value
+        if preferred_series == "ev" and ev_value is not None:
+            return ev_value
         if positive_values:
             return max(positive_values)
         if negative_curtailed is not None:
@@ -1003,6 +1037,31 @@ class SimulationChartView(InteractiveChartView):
             if bar_index is not None:
                 preferred_series = "curtailed"
         if bar_index is None:
+            line_matches: list[tuple[str, object]] = []
+            if self._pv_line is not None and self._pv_line.get_visible():
+                pv_match = find_nearest_line_point(
+                    axis,
+                    event.xdata,
+                    event.ydata,
+                    np.arange(len(self._monthly_summary), dtype=float),
+                    self._monthly_summary["pv_kwh"].to_numpy(dtype=float),
+                )
+                if pv_match is not None:
+                    line_matches.append(("pv", pv_match))
+            if self._ev_line is not None and self._ev_line.get_visible():
+                ev_match = find_nearest_line_point(
+                    axis,
+                    event.xdata,
+                    event.ydata,
+                    np.arange(len(self._monthly_summary), dtype=float),
+                    self._monthly_summary["ev_kwh"].to_numpy(dtype=float),
+                )
+                if ev_match is not None:
+                    line_matches.append(("ev", ev_match))
+            if line_matches:
+                preferred_series, match = min(line_matches, key=lambda item: item[1].pixel_distance)
+                bar_index = match.index
+        if bar_index is None:
             bar_index = find_nearest_x_index(axis, event.xdata, np.arange(len(self._monthly_summary), dtype=float))
         if bar_index is None:
             return False
@@ -1012,7 +1071,8 @@ class SimulationChartView(InteractiveChartView):
         grid_value = self._visible_group_value("grid", bar_index)
         pv_value = self._visible_group_value("pv", bar_index)
         curtailed_value = self._visible_group_value("curtailed", bar_index)
-        if baseline_value is None and grid_value is None and pv_value is None and curtailed_value is None:
+        ev_value = self._visible_group_value("ev", bar_index)
+        if baseline_value is None and grid_value is None and pv_value is None and curtailed_value is None and ev_value is None:
             return False
 
         self._highlight_simulation_month(bar_index)
@@ -1022,12 +1082,13 @@ class SimulationChartView(InteractiveChartView):
             grid_value=grid_value,
             pv_value=pv_value,
             curtailed_value=curtailed_value,
+            ev_value=ev_value,
         )
         self._show_tooltip(
             axis,
             x_value=float(bar_index),
             y_value=tooltip_y,
-            text=format_simulation_tooltip(period_label, baseline_value, grid_value, pv_value, curtailed_value),
+            text=format_simulation_tooltip(period_label, baseline_value, grid_value, pv_value, curtailed_value, ev_value),
         )
         return True
 
@@ -1051,6 +1112,14 @@ class SimulationChartView(InteractiveChartView):
         elif self._pv_highlight is not None:
             self._pv_highlight.set_visible(False)
 
+        if self._ev_highlight is not None and self._ev_line is not None and self._ev_line.get_visible():
+            x_data = np.arange(len(self._monthly_summary), dtype=float)
+            y_data = self._monthly_summary["ev_kwh"].to_numpy(dtype=float)
+            self._ev_highlight.set_data([x_data[index]], [y_data[index]])
+            self._ev_highlight.set_visible(True)
+        elif self._ev_highlight is not None:
+            self._ev_highlight.set_visible(False)
+
     def _clear_hover_artists(self) -> None:
         for bar in self._baseline_bars + self._grid_bars + self._curtailed_bars:
             bar.set_linewidth(0.0)
@@ -1059,6 +1128,8 @@ class SimulationChartView(InteractiveChartView):
                 bar.set_alpha(0.9)
         if self._pv_highlight is not None:
             self._pv_highlight.set_visible(False)
+        if self._ev_highlight is not None:
+            self._ev_highlight.set_visible(False)
 
     def _handle_pick(self, event) -> bool:
         key = self._legend_artist_map.get(event.artist)

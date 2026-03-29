@@ -14,6 +14,7 @@ ACCENT_BLUE = "#65b8ff"
 ACCENT_CYAN = "#4dd7f2"
 ACCENT_ORANGE = "#ff9f5a"
 ACCENT_GREEN = "#63d2b2"
+ACCENT_GOLD = "#f4d35e"
 FILL_BLUE = "#274a63"
 
 DARK_STYLESHEET = f"""
@@ -42,6 +43,25 @@ QFrame {{
 }}
 QLabel {{
     color: {TEXT_PRIMARY};
+}}
+QCheckBox {{
+    color: {TEXT_PRIMARY};
+    spacing: 8px;
+}}
+QCheckBox::indicator {{
+    width: 18px;
+    height: 18px;
+    border: 1px solid {BORDER_COLOR};
+    border-radius: 4px;
+    background-color: #0f1724;
+}}
+QCheckBox::indicator:checked {{
+    background-color: {ACCENT_BLUE};
+    border-color: {ACCENT_BLUE};
+}}
+QCheckBox::indicator:disabled {{
+    background-color: #1a2332;
+    border-color: #263346;
 }}
 QLineEdit, QDateEdit, QTimeEdit, QDoubleSpinBox {{
     background-color: #0f1724;

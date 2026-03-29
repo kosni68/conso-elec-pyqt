@@ -1,13 +1,26 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QSignalBlocker, Qt, pyqtSignal
-from PyQt6.QtWidgets import QDoubleSpinBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtCore import QSignalBlocker, QTime, Qt, pyqtSignal
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QDoubleSpinBox,
+    QFormLayout,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QTimeEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
-from ..models import BatteryConfig, SolarConfig, DEFAULT_BASE_RATE_EUR_KWH
+from ..models import BatteryConfig, EvChargingConfig, SolarConfig, DEFAULT_BASE_RATE_EUR_KWH
 from ..theme import TEXT_MUTED
 from .formatting import format_currency, format_kwh, format_percent, fr_number
 
 EMPTY_VALUE = "—"
+EV_DAY_LABELS = ("Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim")
 
 
 class SimulationPanel(QWidget):
@@ -24,7 +37,10 @@ class SimulationPanel(QWidget):
         top_row.setSpacing(12)
 
         controls_box = QGroupBox("Paramètres de simulation")
-        controls_form = QFormLayout(controls_box)
+        controls_layout = QVBoxLayout(controls_box)
+        controls_layout.setSpacing(12)
+
+        controls_form = QFormLayout()
         controls_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.base_rate_spin = self._make_spinbox(0.0, 5.0, 4, DEFAULT_BASE_RATE_EUR_KWH, suffix=" €/kWh")
@@ -49,10 +65,46 @@ class SimulationPanel(QWidget):
         controls_form.addRow("Rendement A/R", self.efficiency_spin)
         controls_form.addRow("SOC mini", self.min_soc_spin)
         controls_form.addRow("Coût batterie", self.battery_cost_spin)
+        controls_layout.addLayout(controls_form)
+
+        self.ev_box = QGroupBox("Recharge VE")
+        ev_layout = QVBoxLayout(self.ev_box)
+        ev_layout.setSpacing(10)
+
+        self.ev_enabled_checkbox = QCheckBox("Activer la recharge VE")
+        self.ev_enabled_checkbox.toggled.connect(self._set_ev_controls_enabled)
+        ev_layout.addWidget(self.ev_enabled_checkbox)
+
+        ev_form = QFormLayout()
+        ev_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.ev_daily_energy_spin = self._make_spinbox(0.1, 100.0, 1, 10.0, suffix=" kWh/j")
+        self.ev_charge_power_spin = self._make_spinbox(0.1, 22.0, 1, 7.4, suffix=" kW")
+        self.ev_start_time_edit = self._make_time_edit(QTime(22, 0))
+        self.ev_end_time_edit = self._make_time_edit(QTime(6, 0))
+        ev_form.addRow("Énergie / jour", self.ev_daily_energy_spin)
+        ev_form.addRow("Puissance borne", self.ev_charge_power_spin)
+        ev_form.addRow("Début recharge", self.ev_start_time_edit)
+        ev_form.addRow("Fin recharge", self.ev_end_time_edit)
+
+        self.ev_days_widget = QWidget()
+        day_layout = QGridLayout(self.ev_days_widget)
+        day_layout.setContentsMargins(0, 0, 0, 0)
+        day_layout.setHorizontalSpacing(6)
+        day_layout.setVerticalSpacing(6)
+        self.ev_day_buttons: list[QPushButton] = []
+        for index, label in enumerate(EV_DAY_LABELS):
+            button = QPushButton(label)
+            button.setCheckable(True)
+            button.setChecked(True)
+            day_layout.addWidget(button, index // 4, index % 4)
+            self.ev_day_buttons.append(button)
+        ev_form.addRow("Jours actifs", self.ev_days_widget)
+        ev_layout.addLayout(ev_form)
+        controls_layout.addWidget(self.ev_box)
 
         run_button = QPushButton("Recalculer la simulation")
         run_button.clicked.connect(self.run_requested.emit)
-        controls_form.addRow(run_button)
+        controls_layout.addWidget(run_button)
 
         results_box = QGroupBox("Résultats annuels")
         results_layout = QGridLayout(results_box)
@@ -69,6 +121,7 @@ class SimulationPanel(QWidget):
             ("autonomy", "Taux d'autonomie"),
             ("self_consumption", "Taux d'autoconsommation"),
             ("pv_generation", "Production PV"),
+            ("ev_charge", "Recharge VE"),
             ("battery_charge", "Charge batterie"),
             ("battery_discharge", "Décharge batterie"),
             ("curtailed", "Surplus perdu"),
@@ -96,6 +149,15 @@ class SimulationPanel(QWidget):
         layout.addLayout(top_row)
         layout.addWidget(self.note_label)
 
+        self._ev_option_widgets: list[QWidget] = [
+            self.ev_daily_energy_spin,
+            self.ev_charge_power_spin,
+            self.ev_start_time_edit,
+            self.ev_end_time_edit,
+            self.ev_days_widget,
+        ]
+        self._set_ev_controls_enabled(False)
+
     def current_solar_config(self) -> SolarConfig:
         pv_cost = self.pv_cost_spin.value()
         return SolarConfig(
@@ -115,6 +177,16 @@ class SimulationPanel(QWidget):
             capex_eur=battery_cost if battery_cost > 0 else None,
         )
 
+    def current_ev_config(self) -> EvChargingConfig:
+        return EvChargingConfig(
+            enabled=self.ev_enabled_checkbox.isChecked(),
+            daily_energy_kwh=self.ev_daily_energy_spin.value(),
+            charge_power_kw=self.ev_charge_power_spin.value(),
+            start_time=self.ev_start_time_edit.time().toPyTime(),
+            end_time=self.ev_end_time_edit.time().toPyTime(),
+            active_weekdays=tuple(button.isChecked() for button in self.ev_day_buttons),
+        )
+
     def set_base_rate(self, value: float) -> None:
         with QSignalBlocker(self.base_rate_spin):
             self.base_rate_spin.setValue(value)
@@ -128,6 +200,7 @@ class SimulationPanel(QWidget):
         self.result_labels["autonomy"].setText(format_percent(result.autonomy_rate))
         self.result_labels["self_consumption"].setText(format_percent(result.self_consumption_rate))
         self.result_labels["pv_generation"].setText(format_kwh(result.pv_generated_kwh))
+        self.result_labels["ev_charge"].setText(format_kwh(result.ev_charging_kwh))
         self.result_labels["battery_charge"].setText(format_kwh(result.battery_charge_kwh))
         self.result_labels["battery_discharge"].setText(format_kwh(result.battery_discharge_kwh))
         self.result_labels["curtailed"].setText(format_kwh(result.curtailed_pv_kwh))
@@ -144,6 +217,10 @@ class SimulationPanel(QWidget):
     def update_note(self, note: str) -> None:
         self.note_label.setText(note)
 
+    def _set_ev_controls_enabled(self, enabled: bool) -> None:
+        for widget in self._ev_option_widgets:
+            widget.setEnabled(enabled)
+
     @staticmethod
     def _make_spinbox(
         minimum: float,
@@ -159,6 +236,14 @@ class SimulationPanel(QWidget):
         widget.setSuffix(suffix)
         widget.setAlignment(Qt.AlignmentFlag.AlignRight)
         widget.setSingleStep(0.1 if decimals else 1.0)
+        return widget
+
+    @staticmethod
+    def _make_time_edit(value: QTime) -> QTimeEdit:
+        widget = QTimeEdit()
+        widget.setDisplayFormat("HH:mm")
+        widget.setTime(value)
+        widget.setAlignment(Qt.AlignmentFlag.AlignRight)
         return widget
 
     def _make_optional_money_spinbox(self) -> QDoubleSpinBox:

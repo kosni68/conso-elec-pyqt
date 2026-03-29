@@ -33,6 +33,16 @@ class BatteryConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class EvChargingConfig:
+    enabled: bool = False
+    daily_energy_kwh: float = 10.0
+    charge_power_kw: float = 7.4
+    start_time: time = time(22, 0)
+    end_time: time = time(6, 0)
+    active_weekdays: tuple[bool, bool, bool, bool, bool, bool, bool] = (True, True, True, True, True, True, True)
+
+
+@dataclass(frozen=True, slots=True)
 class SimulationResult:
     baseline_grid_kwh: float
     simulated_grid_kwh: float
@@ -51,3 +61,4 @@ class SimulationResult:
     self_consumption_rate: float
     autonomy_rate: float
     simple_payback_years: Optional[float]
+    ev_charging_kwh: float = 0.0

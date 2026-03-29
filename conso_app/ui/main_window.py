@@ -6,10 +6,11 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QFileDialog, QFrame, QMainWindow, QMessageBox, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
 from ..analysis import ConsumptionAnalyzer, ConsumptionAnnualizer, ConsumptionCsvLoader, PvBatterySimulator
-from ..models import BatteryConfig, SolarConfig, TariffConfig
+from ..models import BatteryConfig, EvChargingConfig, SolarConfig, TariffConfig
 from ..theme import apply_dark_theme
 from .charts import OverviewChartView, SimulationChartView
 from .controls import FileSelectionBar, FilterPanel, KpiPanel
+from .formatting import format_kwh
 from .simulation_panel import SimulationPanel
 from .state import ApplicationState
 
@@ -137,6 +138,12 @@ class ConsumptionMainWindow(QMainWindow):
         self.efficiency_spin = self.simulation_panel.efficiency_spin
         self.min_soc_spin = self.simulation_panel.min_soc_spin
         self.battery_cost_spin = self.simulation_panel.battery_cost_spin
+        self.ev_enabled_checkbox = self.simulation_panel.ev_enabled_checkbox
+        self.ev_daily_energy_spin = self.simulation_panel.ev_daily_energy_spin
+        self.ev_charge_power_spin = self.simulation_panel.ev_charge_power_spin
+        self.ev_start_time_edit = self.simulation_panel.ev_start_time_edit
+        self.ev_end_time_edit = self.simulation_panel.ev_end_time_edit
+        self.ev_day_buttons = self.simulation_panel.ev_day_buttons
         self.simulation_labels = self.simulation_panel.result_labels
         self.simulation_note_label = self.simulation_panel.note_label
         self.overview_note_label = self.overview_chart.note_label
@@ -200,6 +207,9 @@ class ConsumptionMainWindow(QMainWindow):
     def current_battery_config(self) -> BatteryConfig:
         return self.simulation_panel.current_battery_config()
 
+    def current_ev_config(self) -> EvChargingConfig:
+        return self.simulation_panel.current_ev_config()
+
     def refresh_analysis(self) -> None:
         if self.raw_df is None:
             return
@@ -232,6 +242,7 @@ class ConsumptionMainWindow(QMainWindow):
                 self.current_tariff(),
                 self.current_solar_config(),
                 self.current_battery_config(),
+                ev_config=self.current_ev_config(),
             )
         except Exception as exc:
             QMessageBox.critical(self, "Erreur de simulation", str(exc))
@@ -252,9 +263,13 @@ class ConsumptionMainWindow(QMainWindow):
         first_period = self.annualized_df.index.min().strftime("%m/%Y")
         last_period = self.annualized_df.index.max().strftime("%m/%Y")
         counts = self.annualized_df["source_kind"].value_counts().to_dict()
-        return (
+        note = (
             f"Simulation annualisée sur {first_period} → {last_period}. "
             f"Mois observés : {int(coverage['is_full'].sum())} complets, "
             f"compléments/interpolations : {counts.get('interpolated', 0)} pas interpolés et "
             f"{counts.get('filled_profile', 0) + counts.get('observed_template', 0)} pas reconstruits."
         )
+        ev_config = self.current_ev_config()
+        if ev_config.enabled and self.simulation_result is not None:
+            note += f" Recharge VE activee: {format_kwh(self.simulation_result.ev_charging_kwh)} / an, scenario avant/apres incluant le VE."
+        return note

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from ..models import BatteryConfig, SimulationResult, SolarConfig, TariffConfig
+from ..models import BatteryConfig, EvChargingConfig, SimulationResult, SolarConfig, TariffConfig
 from ._constants import INTERVAL_HOURS, MONTHLY_PV_WEIGHTS, MONTHLY_SOLAR_WINDOWS
 from ._helpers import parse_time_text
 from .analyzer import ConsumptionAnalyzer
@@ -80,8 +80,13 @@ class PvBatterySimulator:
         tariff: TariffConfig,
         solar_config: SolarConfig,
         battery_config: BatteryConfig,
+        ev_config: EvChargingConfig | None = None,
     ) -> tuple[SimulationResult, pd.DataFrame]:
         working = self.analyzer.add_derived_columns(annualized_df, tariff)
+        working["home_consumption_kwh"] = working["consumption_kwh"].to_numpy(dtype=float)
+        ev_charging = self.build_ev_charging_series(working.index, ev_config)
+        working["ev_charging_kwh"] = ev_charging.to_numpy(dtype=float)
+        working["consumption_kwh"] = working["home_consumption_kwh"] + working["ev_charging_kwh"]
         loads = working["consumption_kwh"].to_numpy(dtype=float)
         pv_generation = self.build_pv_generation_series(working.index, solar_config).to_numpy(dtype=float)
         is_day = working["is_day"].to_numpy(dtype=bool)
@@ -103,9 +108,76 @@ class PvBatterySimulator:
             solar_config=solar_config,
             battery_config=battery_config,
             arrays=arrays,
+            ev_charging=ev_charging.to_numpy(dtype=float),
         )
         simulation_df = self._build_simulation_dataframe(working, pv_generation, arrays)
         return result, simulation_df
+
+    def build_ev_charging_series(
+        self,
+        index: pd.DatetimeIndex,
+        ev_config: EvChargingConfig | None,
+    ) -> pd.Series:
+        series = pd.Series(0.0, index=index, dtype=float)
+        if len(index) == 0 or ev_config is None or not ev_config.enabled:
+            return series
+
+        self._validate_ev_config(ev_config)
+        step_energy_kwh = ev_config.charge_power_kw * INTERVAL_HOURS
+        period_duration = (index[-1] + pd.Timedelta(minutes=30)) - index[0]
+
+        for day in sorted(pd.Timestamp(value) for value in pd.Index(index.normalize()).unique()):
+            if not ev_config.active_weekdays[day.dayofweek]:
+                continue
+
+            session_start = pd.Timestamp.combine(day.date(), ev_config.start_time)
+            session_end = pd.Timestamp.combine(day.date(), ev_config.end_time)
+            if session_end <= session_start:
+                session_end += pd.Timedelta(days=1)
+
+            session_slots = pd.date_range(session_start, session_end, freq="30min", inclusive="left")
+            remaining_energy = ev_config.daily_energy_kwh
+            if len(session_slots) == 0:
+                continue
+
+            for slot in session_slots:
+                target_slot = slot
+                if target_slot > index[-1]:
+                    target_slot -= period_duration
+                delivered = min(step_energy_kwh, remaining_energy)
+                series.loc[target_slot] += delivered
+                remaining_energy -= delivered
+                if remaining_energy <= 1e-9:
+                    break
+
+            if remaining_energy > 1e-9:
+                raise ValueError("La recharge VE demandée dépasse la capacité de la fenêtre sélectionnée.")
+
+        return series
+
+    @staticmethod
+    def _validate_ev_config(ev_config: EvChargingConfig) -> None:
+        if ev_config.daily_energy_kwh <= 0:
+            raise ValueError("L'énergie VE journalière doit être supérieure à 0 kWh.")
+        if ev_config.charge_power_kw <= 0:
+            raise ValueError("La puissance de charge VE doit être supérieure à 0 kW.")
+        if len(ev_config.active_weekdays) != 7:
+            raise ValueError("La recharge VE doit définir 7 jours d'activation.")
+        if not any(ev_config.active_weekdays):
+            raise ValueError("Sélectionnez au moins un jour actif pour la recharge VE.")
+        if ev_config.start_time == ev_config.end_time:
+            raise ValueError("Les heures de début et de fin de recharge VE doivent être différentes.")
+
+        session_start = pd.Timestamp.combine(pd.Timestamp("2026-01-01").date(), ev_config.start_time)
+        session_end = pd.Timestamp.combine(pd.Timestamp("2026-01-01").date(), ev_config.end_time)
+        if session_end <= session_start:
+            session_end += pd.Timedelta(days=1)
+        slot_count = len(pd.date_range(session_start, session_end, freq="30min", inclusive="left"))
+        if slot_count == 0:
+            raise ValueError("La fenêtre de recharge VE ne contient aucun créneau exploitable.")
+        max_deliverable_kwh = slot_count * ev_config.charge_power_kw * INTERVAL_HOURS
+        if ev_config.daily_energy_kwh - max_deliverable_kwh > 1e-9:
+            raise ValueError("La fenêtre de recharge VE est trop courte pour délivrer l'énergie quotidienne demandée.")
 
     @staticmethod
     def _build_daily_pv_shape(start_text: str, end_text: str) -> np.ndarray:
@@ -183,6 +255,7 @@ class PvBatterySimulator:
         solar_config: SolarConfig,
         battery_config: BatteryConfig,
         arrays: dict[str, np.ndarray],
+        ev_charging: np.ndarray,
     ) -> SimulationResult:
         baseline_grid_kwh = float(loads.sum())
         simulated_grid_kwh = float(arrays["grid_kwh"].sum())
@@ -224,6 +297,7 @@ class PvBatterySimulator:
             self_consumption_rate=self_consumption_rate,
             autonomy_rate=autonomy_rate,
             simple_payback_years=simple_payback_years,
+            ev_charging_kwh=float(ev_charging.sum()),
         )
 
     @staticmethod

@@ -1,18 +1,21 @@
 from __future__ import annotations
 
+from datetime import time
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from conso_app.analysis import (
+    PvBatterySimulator,
     build_annualized_consumption,
     compute_analysis_summary,
     load_consumption_csv,
     month_coverage,
     simulate_pv_battery,
 )
-from conso_app.models import BatteryConfig, SolarConfig, TariffConfig
+from conso_app.models import BatteryConfig, EvChargingConfig, SolarConfig, TariffConfig
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -166,6 +169,75 @@ def test_simulation_without_pv_keeps_same_grid_need() -> None:
     assert result.battery_discharge_kwh == pytest.approx(0.0)
 
 
+def test_simulation_without_ev_config_matches_disabled_ev_config() -> None:
+    df = load_consumption_csv(REAL_CSV_PATH)
+    annualized = build_annualized_consumption(df)
+    tariff = TariffConfig(base_rate_eur_kwh=0.25)
+    solar = SolarConfig(pv_kwc=6.0, specific_yield_kwh_per_kwc_year=1200.0, capex_eur=None)
+    battery = BatteryConfig(
+        capacity_kwh=5.0,
+        charge_power_kw=2.5,
+        discharge_power_kw=2.5,
+        roundtrip_efficiency=0.9,
+        min_soc_pct=10.0,
+        capex_eur=None,
+    )
+
+    without_ev, without_ev_df = simulate_pv_battery(annualized, tariff, solar, battery)
+    disabled_ev, disabled_ev_df = simulate_pv_battery(
+        annualized,
+        tariff,
+        solar,
+        battery,
+        EvChargingConfig(enabled=False),
+    )
+
+    assert disabled_ev == without_ev
+    pd.testing.assert_frame_equal(disabled_ev_df, without_ev_df)
+
+
+def test_build_ev_charging_series_respects_weekdays_and_overnight_window() -> None:
+    simulator = PvBatterySimulator()
+    index = pd.date_range("2026-01-05 00:00:00", "2026-01-07 23:30:00", freq="30min")
+    ev_series = simulator.build_ev_charging_series(
+        index,
+        EvChargingConfig(
+            enabled=True,
+            daily_energy_kwh=15.0,
+            charge_power_kw=5.0,
+            start_time=time(22, 0),
+            end_time=time(2, 0),
+            active_weekdays=(True, False, False, False, False, False, False),
+        ),
+    )
+
+    assert ev_series.sum() == pytest.approx(15.0)
+    assert ev_series.loc[pd.Timestamp("2026-01-05 22:00:00")] == pytest.approx(2.5)
+    assert ev_series.loc[pd.Timestamp("2026-01-05 23:30:00")] == pytest.approx(2.5)
+    assert ev_series.loc[pd.Timestamp("2026-01-06 00:00:00")] == pytest.approx(2.5)
+    assert ev_series.loc[pd.Timestamp("2026-01-06 00:30:00")] == pytest.approx(2.5)
+    assert ev_series.loc[pd.Timestamp("2026-01-06 01:00:00")] == pytest.approx(0.0)
+    assert ev_series.loc[pd.Timestamp("2026-01-06 01:30:00")] == pytest.approx(0.0)
+    assert ev_series.loc[pd.Timestamp("2026-01-06 22:00:00")] == pytest.approx(0.0)
+
+
+def test_build_ev_charging_series_rejects_unreachable_daily_target() -> None:
+    simulator = PvBatterySimulator()
+    index = pd.date_range("2026-01-01 00:00:00", "2026-01-03 23:30:00", freq="30min")
+
+    with pytest.raises(ValueError, match="fenêtre de recharge VE est trop courte"):
+        simulator.build_ev_charging_series(
+            index,
+            EvChargingConfig(
+                enabled=True,
+                daily_energy_kwh=20.0,
+                charge_power_kw=3.0,
+                start_time=time(22, 0),
+                end_time=time(23, 0),
+            ),
+        )
+
+
 def test_simulation_with_pv_and_battery_improves_over_pv_only() -> None:
     df = load_consumption_csv(REAL_CSV_PATH)
     annualized = build_annualized_consumption(df)
@@ -209,6 +281,41 @@ def test_simulation_with_pv_and_battery_improves_over_pv_only() -> None:
     assert (simulation_df["curtailed_pv_kwh"] >= 0).all()
     assert simulation_df["soc_kwh"].min() >= 0.5 - 1e-9
     assert simulation_df["soc_kwh"].max() <= 5.0 + 1e-9
+
+
+def test_simulation_with_ev_adds_expected_charging_load() -> None:
+    df = load_consumption_csv(REAL_CSV_PATH)
+    annualized = build_annualized_consumption(df)
+    result, simulation_df = simulate_pv_battery(
+        annualized,
+        TariffConfig(base_rate_eur_kwh=0.25),
+        SolarConfig(pv_kwc=0.0, specific_yield_kwh_per_kwc_year=1200.0, capex_eur=None),
+        BatteryConfig(
+            capacity_kwh=0.0,
+            charge_power_kw=0.0,
+            discharge_power_kw=0.0,
+            roundtrip_efficiency=0.9,
+            min_soc_pct=0.0,
+            capex_eur=None,
+        ),
+        EvChargingConfig(
+            enabled=True,
+            daily_energy_kwh=10.0,
+            charge_power_kw=7.4,
+            start_time=time(22, 0),
+            end_time=time(6, 0),
+        ),
+    )
+
+    assert "ev_charging_kwh" in simulation_df
+    assert "home_consumption_kwh" in simulation_df
+    assert result.ev_charging_kwh == pytest.approx(3650.0)
+    assert simulation_df["ev_charging_kwh"].sum() == pytest.approx(result.ev_charging_kwh)
+    assert np.allclose(
+        (simulation_df["consumption_kwh"] - simulation_df["home_consumption_kwh"]).to_numpy(dtype=float),
+        simulation_df["ev_charging_kwh"].to_numpy(dtype=float),
+    )
+    assert simulation_df["ev_charging_kwh"].sum() > 0
 
 
 def test_payback_hidden_when_costs_missing() -> None:

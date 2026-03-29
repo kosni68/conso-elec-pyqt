@@ -11,7 +11,7 @@ from .analyzer import ConsumptionAnalyzer
 from .csv_loader import ConsumptionCsvLoader
 from .simulation import PvBatterySimulator, build_pv_generation_series
 from .types import AnalysisSummary
-from ..models import BatteryConfig, SimulationResult, SolarConfig, TariffConfig
+from ..models import BatteryConfig, EvChargingConfig, SimulationResult, SolarConfig, TariffConfig
 
 _DEFAULT_ANALYZER = ConsumptionAnalyzer()
 _DEFAULT_LOADER = ConsumptionCsvLoader(analyzer=_DEFAULT_ANALYZER)
@@ -48,8 +48,9 @@ def simulate_pv_battery(
     tariff: TariffConfig,
     solar_config: SolarConfig,
     battery_config: BatteryConfig,
+    ev_config: Optional[EvChargingConfig] = None,
 ) -> tuple[SimulationResult, pd.DataFrame]:
-    return _DEFAULT_SIMULATOR.simulate(annualized_df, tariff, solar_config, battery_config)
+    return _DEFAULT_SIMULATOR.simulate(annualized_df, tariff, solar_config, battery_config, ev_config=ev_config)
 
 
 __all__ = [
@@ -57,6 +58,7 @@ __all__ = [
     "ConsumptionAnalyzer",
     "ConsumptionAnnualizer",
     "ConsumptionCsvLoader",
+    "EvChargingConfig",
     "PvBatterySimulator",
     "add_derived_columns",
     "build_annualized_consumption",
