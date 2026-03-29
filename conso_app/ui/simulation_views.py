@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from PyQt6.QtWidgets import QGridLayout, QGroupBox, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QGridLayout, QGroupBox, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from ..models import SimulationResult
 from ..theme import TEXT_MUTED
@@ -28,26 +28,33 @@ COMPARISON_RESULT_ROWS = (
 class SimulationScenarioView(QWidget):
     def __init__(self) -> None:
         super().__init__()
+        self.setMinimumWidth(1140)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
+        layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize)
 
         self.panel = SimulationPanel()
         self.chart = SimulationChartView()
+        self.panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.chart.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         layout.addWidget(self.panel)
         layout.addWidget(self.chart)
+        self.setMinimumHeight(self.sizeHint().height())
 
 
 class SimulationComparisonView(QWidget):
     def __init__(self, scenario_labels: Mapping[str, str]) -> None:
         super().__init__()
+        self.setMinimumWidth(1220)
         self.scenario_labels = dict(scenario_labels)
         self.result_labels: dict[str, dict[str, QLabel]] = {}
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(12)
+        layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize)
 
         summary_box = QGroupBox("Comparaison annuelle")
         summary_layout = QGridLayout(summary_box)
@@ -76,6 +83,7 @@ class SimulationComparisonView(QWidget):
                 self.result_labels[metric_key][scenario_key] = value_label
 
         self.chart = SimulationComparisonChartView(self.scenario_labels)
+        self.chart.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.note_label = QLabel("La comparaison s'affichera après calcul des scénarios.")
         self.note_label.setWordWrap(True)
         self.note_label.setStyleSheet(f"color: {TEXT_MUTED};")
@@ -83,6 +91,7 @@ class SimulationComparisonView(QWidget):
         layout.addWidget(summary_box)
         layout.addWidget(self.chart)
         layout.addWidget(self.note_label)
+        self.setMinimumHeight(self.sizeHint().height())
 
     def update_summary(self, results: Mapping[str, SimulationResult | None]) -> None:
         for metric_key, labels_by_scenario in self.result_labels.items():

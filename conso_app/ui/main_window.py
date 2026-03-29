@@ -117,10 +117,9 @@ class ConsumptionMainWindow(QMainWindow):
         self.overview_scroll_area = self._wrap_scrollable(self.overview_chart)
         self.simulation_subtabs = self._build_simulation_subtabs()
         self.simulation_tab_content = self.simulation_subtabs
-        self.simulation_scroll_area = self._wrap_scrollable(self.simulation_tab_content)
         self.tabs.addTab(self.overview_scroll_area, "Vue globale")
         self.tabs.addTab(self.filter_panel, "Filtres")
-        self.tabs.addTab(self.simulation_scroll_area, "Simulation")
+        self.tabs.addTab(self.simulation_tab_content, "Simulation")
 
         root.addWidget(self.file_selection_bar)
         root.addWidget(self.kpi_panel)
@@ -131,9 +130,15 @@ class ConsumptionMainWindow(QMainWindow):
 
     def _build_simulation_subtabs(self) -> QTabWidget:
         subtabs = QTabWidget()
+        subtabs.setUsesScrollButtons(True)
+        subtabs.tabBar().setElideMode(Qt.TextElideMode.ElideNone)
+        self.scenario_scroll_areas: dict[str, QScrollArea] = {}
         for scenario_key in SIMULATION_SCENARIO_KEYS:
-            subtabs.addTab(self.scenario_views[scenario_key], SIMULATION_SCENARIO_TITLES[scenario_key])
-        subtabs.addTab(self.simulation_comparison_view, "Comparaison")
+            scroll_area = self._wrap_scrollable(self.scenario_views[scenario_key])
+            self.scenario_scroll_areas[scenario_key] = scroll_area
+            subtabs.addTab(scroll_area, SIMULATION_SCENARIO_TITLES[scenario_key])
+        self.comparison_scroll_area = self._wrap_scrollable(self.simulation_comparison_view)
+        subtabs.addTab(self.comparison_scroll_area, "Comparaison")
         return subtabs
 
     def _wrap_scrollable(self, widget: QWidget) -> QScrollArea:
@@ -189,6 +194,9 @@ class ConsumptionMainWindow(QMainWindow):
         self.simulation_panel_3 = self.scenario_views["simulation_3"].panel
         self.simulation_chart_2 = self.scenario_views["simulation_2"].chart
         self.simulation_chart_3 = self.scenario_views["simulation_3"].chart
+        self.simulation_scroll_area = self.scenario_scroll_areas[LEGACY_SCENARIO_KEY]
+        self.simulation_scroll_area_2 = self.scenario_scroll_areas["simulation_2"]
+        self.simulation_scroll_area_3 = self.scenario_scroll_areas["simulation_3"]
         self.simulation_labels_2 = self.scenario_views["simulation_2"].panel.result_labels
         self.simulation_labels_3 = self.scenario_views["simulation_3"].panel.result_labels
         self.simulation_note_label_2 = self.scenario_views["simulation_2"].panel.note_label

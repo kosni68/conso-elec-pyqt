@@ -18,6 +18,7 @@ class SimulationPanel(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setMinimumWidth(1120)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(12)
@@ -26,6 +27,7 @@ class SimulationPanel(QWidget):
         top_row.setSpacing(12)
 
         controls_box = QGroupBox("Paramètres de simulation")
+        controls_box.setMinimumWidth(460)
         controls_layout = QVBoxLayout(controls_box)
         controls_layout.setSpacing(12)
 
@@ -96,6 +98,7 @@ class SimulationPanel(QWidget):
         controls_layout.addWidget(run_button)
 
         results_box = QGroupBox("Résultats annuels")
+        results_box.setMinimumWidth(600)
         results_layout = QGridLayout(results_box)
         results_layout.setHorizontalSpacing(18)
         results_layout.setVerticalSpacing(8)

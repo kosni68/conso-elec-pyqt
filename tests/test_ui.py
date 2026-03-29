@@ -93,7 +93,11 @@ def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindo
         "save",
     }
     assert window.overview_scroll_area.widget() is window.overview_chart
-    assert window.simulation_scroll_area.widget() is window.simulation_tab_content
+    assert window.tabs.widget(2) is window.simulation_tab_content
+    assert window.simulation_scroll_area.widget() is window.scenario_views["simulation_1"]
+    assert window.simulation_scroll_area_2.widget() is window.scenario_views["simulation_2"]
+    assert window.simulation_scroll_area_3.widget() is window.scenario_views["simulation_3"]
+    assert window.comparison_scroll_area.widget() is window.comparison_view
     assert len(window.overview_chart.plot_axes) == 3
     assert len(window.simulation_chart.plot_axes) == 1
     assert len(window.simulation_chart_2.plot_axes) == 1
@@ -106,6 +110,7 @@ def test_main_window_loads_csv_and_refreshes(loaded_window: ConsumptionMainWindo
     assert window.simulation_toolbar.button_map["pan"].isEnabled() is False
     assert window.simulation_toolbar.button_map["zoom"].isEnabled() is False
     assert window.simulation_scroll_area.verticalScrollBarPolicy().name == "ScrollBarAsNeeded"
+    assert window.comparison_scroll_area.verticalScrollBarPolicy().name == "ScrollBarAsNeeded"
     assert window.ev_enabled_checkbox.isChecked() is False
     assert window.ev_daily_energy_spin.isEnabled() is False
     assert window.base_rate_filter_spin.value() == pytest.approx(window.simulation_panel_2.base_rate_spin.value())
