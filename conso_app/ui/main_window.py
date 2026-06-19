@@ -5,12 +5,20 @@ from pathlib import Path
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QFileDialog, QFrame, QMainWindow, QMessageBox, QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
-from ..analysis import ConsumptionAnalyzer, ConsumptionAnnualizer, ConsumptionCsvLoader, PvBatterySimulator
+from ..analysis import (
+    CRITERION_LABELS,
+    ConsumptionAnalyzer,
+    ConsumptionAnnualizer,
+    ConsumptionCsvLoader,
+    InstallationOptimizer,
+    PvBatterySimulator,
+)
 from ..models import BatteryConfig, EvChargingConfig, SolarConfig, TariffConfig
 from ..theme import apply_dark_theme
 from .charts import OverviewChartView
 from .controls import FileSelectionBar, FilterPanel, KpiPanel
-from .formatting import format_kwh
+from .formatting import format_kwh, fr_number
+from .optimizer_view import OptimizerView
 from .simulation_views import SimulationComparisonView, SimulationScenarioView
 from .state import ApplicationState, SIMULATION_SCENARIO_KEYS
 
@@ -34,6 +42,7 @@ class ConsumptionMainWindow(QMainWindow):
         self.loader = ConsumptionCsvLoader(analyzer=self.analyzer)
         self.annualizer = ConsumptionAnnualizer(analyzer=self.analyzer)
         self.simulator = PvBatterySimulator(analyzer=self.analyzer)
+        self.optimizer = InstallationOptimizer(analyzer=self.analyzer)
         self._last_applied_tariff_rate: float | None = None
 
         self.setWindowTitle("Analyse de consommation électrique")
@@ -113,13 +122,19 @@ class ConsumptionMainWindow(QMainWindow):
         self.simulation_comparison_view = SimulationComparisonView(SIMULATION_SCENARIO_TITLES)
         self.simulation_comparison_view.chart.status_message_changed.connect(self.statusBar().showMessage)
 
+        self.optimizer_view = OptimizerView()
+        self.optimizer_view.optimize_requested.connect(self.run_optimization)
+        self.optimizer_view.apply_requested.connect(self.apply_optimal_to_simulation)
+
         self.tabs = QTabWidget()
         self.overview_scroll_area = self._wrap_scrollable(self.overview_chart)
         self.simulation_subtabs = self._build_simulation_subtabs()
         self.simulation_tab_content = self.simulation_subtabs
+        self.optimizer_scroll_area = self._wrap_scrollable(self.optimizer_view)
         self.tabs.addTab(self.overview_scroll_area, "Vue globale")
         self.tabs.addTab(self.filter_panel, "Filtres")
         self.tabs.addTab(self.simulation_tab_content, "Simulation")
+        self.tabs.addTab(self.optimizer_scroll_area, "Installation idéale")
 
         root.addWidget(self.file_selection_bar)
         root.addWidget(self.kpi_panel)
@@ -357,6 +372,82 @@ class ConsumptionMainWindow(QMainWindow):
         self.simulation_comparison_view.update_summary(self.simulation_results)
         self.simulation_comparison_view.update_comparison(self.annualized_df, self.simulation_frames)
         self.simulation_comparison_view.update_note(self._build_comparison_note())
+
+    def run_optimization(self) -> None:
+        if self.raw_df is None:
+            QMessageBox.information(
+                self,
+                "Aucune donnée",
+                "Chargez d'abord un fichier CSV pour calculer l'installation idéale.",
+            )
+            return
+
+        view = self.optimizer_view
+        tariff = self.current_tariff()
+        battery_template = self.current_battery_config(LEGACY_SCENARIO_KEY)
+        ev_config = self.current_ev_config(LEGACY_SCENARIO_KEY) if view.include_ev() else None
+        self.optimizer.horizon_years = view.current_horizon_years()
+
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        self.statusBar().showMessage("Recherche du dimensionnement idéal…")
+        try:
+            annualized_df = self.annualizer.build_annualized_consumption(self.raw_df, tariff)
+            result = self.optimizer.optimize(
+                annualized_df,
+                tariff,
+                cost_model=view.current_cost_model(),
+                search_space=view.current_search_space(),
+                criterion=view.current_criterion(),
+                autonomy_target=view.current_autonomy_target(),
+                specific_yield_kwh_per_kwc_year=view.current_specific_yield(),
+                battery_template=battery_template,
+                ev_config=ev_config,
+            )
+        except Exception as exc:
+            QMessageBox.critical(self, "Erreur d'optimisation", str(exc))
+            return
+        finally:
+            QApplication.restoreOverrideCursor()
+
+        self.state.annualized_df = annualized_df
+        view.display_result(result)
+        view.update_note(self._build_optimization_note(result))
+        self.statusBar().showMessage(
+            f"Installation idéale : {fr_number(result.best.pv_kwc, 1)} kWc + "
+            f"{format_kwh(result.best.capacity_kwh)} ({CRITERION_LABELS[result.criterion]})."
+        )
+
+    def apply_optimal_to_simulation(self) -> None:
+        candidate = self.optimizer_view.best_candidate()
+        if candidate is None:
+            return
+
+        panel = self.scenario_views[LEGACY_SCENARIO_KEY].panel
+        panel.pv_power_spin.setValue(candidate.pv_kwc)
+        panel.pv_yield_spin.setValue(self.optimizer_view.current_specific_yield())
+        panel.pv_cost_spin.setValue(round(candidate.pv_capex_eur))
+        panel.battery_capacity_spin.setValue(candidate.capacity_kwh)
+        panel.battery_cost_spin.setValue(round(candidate.battery_capex_eur))
+
+        self.tabs.setCurrentWidget(self.simulation_tab_content)
+        self.simulation_subtabs.setCurrentWidget(self.scenario_scroll_areas[LEGACY_SCENARIO_KEY])
+        self.run_simulation(LEGACY_SCENARIO_KEY)
+        self.statusBar().showMessage("Configuration optimale appliquée à Simulation 1.")
+
+    def _build_optimization_note(self, result) -> str:
+        best = result.best
+        note = (
+            f"Critère : {CRITERION_LABELS[result.criterion]}. "
+            f"{result.candidate_count} combinaisons PV/batterie évaluées sur l'année annualisée. "
+            f"Recommandation : {fr_number(best.pv_kwc, 1)} kWc + {format_kwh(best.capacity_kwh)} "
+            f"pour {format_kwh(best.simulated_grid_kwh)} soutirés (sur {format_kwh(best.baseline_grid_kwh)})."
+        )
+        if result.criterion == "autonomy" and best.autonomy_rate < result.autonomy_target - 1e-9:
+            note += (
+                f" Objectif {fr_number(result.autonomy_target * 100, 0)} % non atteignable dans la plage de "
+                f"recherche : configuration la plus autonome retenue."
+            )
+        return note
 
     def _sync_shared_base_rate(self, value: float) -> None:
         self.filter_panel.set_base_rate(value)

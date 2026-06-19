@@ -11,6 +11,7 @@ L’application s’appuie sur `pandas`, `numpy` et `matplotlib`, avec une struc
 - visualisations de consommation journalière, mensuelle et du profil horaire moyen
 - filtres par plage de dates et découpage jour/nuit paramétrable
 - simulation PV + batterie avec estimation des économies annuelles
+- recherche de l’installation idéale par critère (autonomie cible, retour le plus rapide, économies ou gain net maximal)
 - annualisation d’un historique partiel pour produire une année complète de simulation
 
 ## Prérequis
@@ -64,6 +65,7 @@ Le chargeur tolère aussi l’ancienne variante de texte corrompu si un export h
 4. Ajuster les dates et le découpage jour/nuit dans `Filtres`.
 5. Régler les paramètres PV et batterie dans `Simulation`.
 6. Lire les économies annuelles, l’autonomie et le retour simple.
+7. Dans `Installation idéale`, choisir un critère (autonomie cible, retour le plus rapide, économies ou gain net maximal), ajuster les coûts unitaires (€/kWc, €/kWh) et la plage de recherche, puis lancer le calcul. Le meilleur dimensionnement peut être renvoyé vers `Simulation 1`.
 
 ## Hypothèses de simulation
 

@@ -9,6 +9,14 @@ from ._helpers import add_derived_columns, filter_consumption, parse_time_text
 from .annualizer import ConsumptionAnnualizer
 from .analyzer import ConsumptionAnalyzer
 from .csv_loader import ConsumptionCsvLoader
+from .optimizer import (
+    CRITERION_LABELS,
+    CostModel,
+    InstallationOptimizer,
+    OptimizationResult,
+    SearchSpace,
+    SizingCandidate,
+)
 from .simulation import PvBatterySimulator, build_pv_generation_series
 from .types import AnalysisSummary
 from ..models import BatteryConfig, EvChargingConfig, SimulationResult, SolarConfig, TariffConfig
@@ -55,11 +63,17 @@ def simulate_pv_battery(
 
 __all__ = [
     "AnalysisSummary",
+    "CRITERION_LABELS",
     "ConsumptionAnalyzer",
     "ConsumptionAnnualizer",
     "ConsumptionCsvLoader",
+    "CostModel",
     "EvChargingConfig",
+    "InstallationOptimizer",
+    "OptimizationResult",
     "PvBatterySimulator",
+    "SearchSpace",
+    "SizingCandidate",
     "add_derived_columns",
     "build_annualized_consumption",
     "build_pv_generation_series",

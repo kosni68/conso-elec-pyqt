@@ -541,3 +541,44 @@ def test_ev_controls_and_chart_update_when_ev_is_enabled(
     annotation = simulation.tooltip_annotations[axis]
     assert annotation.get_visible() is True
     assert "Recharge VE" in annotation.get_text()
+
+
+def test_optimizer_tab_computes_and_applies_best_config(
+    loaded_window: ConsumptionMainWindow,
+    qapp: QApplication,
+) -> None:
+    from conso_app.analysis.optimizer import CRITERION_PAYBACK
+
+    window = loaded_window
+    view = window.optimizer_view
+
+    assert window.tabs.tabText(3) == "Installation idéale"
+    assert view.autonomy_target_spin.isEnabled() is True  # critère autonomie par défaut
+
+    # Grille réduite pour un test rapide.
+    view.pv_max_spin.setValue(6.0)
+    view.pv_step_spin.setValue(2.0)
+    view.battery_max_spin.setValue(4.8)
+    view.battery_step_spin.setValue(4.8)
+
+    criterion_keys = [view.criterion_combo.itemData(index) for index in range(view.criterion_combo.count())]
+    view.criterion_combo.setCurrentIndex(criterion_keys.index(CRITERION_PAYBACK))
+    qapp.processEvents()
+    assert view.autonomy_target_spin.isEnabled() is False  # désactivé hors critère autonomie
+
+    window.run_optimization()
+    qapp.processEvents()
+
+    best = view.best_candidate()
+    assert best is not None
+    assert best.payback_years is not None
+    assert view.ranking_table.rowCount() > 0
+    assert view.apply_button.isEnabled() is True
+    assert view.result_labels["pv_power"].text() != "—"
+
+    window.apply_optimal_to_simulation()
+    qapp.processEvents()
+
+    assert window.pv_power_spin.value() == pytest.approx(best.pv_kwc)
+    assert window.battery_capacity_spin.value() == pytest.approx(best.capacity_kwh)
+    assert window.tabs.currentWidget() is window.simulation_tab_content

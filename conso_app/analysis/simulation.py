@@ -47,6 +47,84 @@ class IntervalSimulation:
     soc_kwh: float
 
 
+@dataclass(frozen=True, slots=True)
+class SizingMetrics:
+    simulated_grid_kwh: float
+    direct_pv_kwh: float
+    battery_charge_kwh: float
+    battery_discharge_kwh: float
+    curtailed_pv_kwh: float
+
+
+def simulate_sizing_metrics(
+    loads: np.ndarray,
+    pv_generation: np.ndarray,
+    runtime: BatteryRuntimeConfig,
+) -> SizingMetrics:
+    """Aggregate-only battery simulation used by sizing sweeps.
+
+    Mirrors :meth:`PvBatterySimulator._simulate_interval` but only accumulates the
+    annual totals, skipping the per-interval dataclasses, arrays and dataframe that
+    :meth:`PvBatterySimulator.simulate` builds for the charts. A full annualised year
+    evaluates in ~15 ms, which keeps grid searches over many PV/battery sizes practical.
+    """
+    capacity = runtime.capacity_kwh
+    charge_efficiency = runtime.charge_efficiency
+    discharge_efficiency = runtime.discharge_efficiency
+    charge_limit = runtime.charge_input_limit_kwh
+    discharge_limit = runtime.discharge_output_limit_kwh
+    min_soc = runtime.min_soc_kwh
+
+    soc = min_soc
+    grid_total = 0.0
+    direct_total = 0.0
+    charge_total = 0.0
+    discharge_total = 0.0
+    curtailed_total = 0.0
+    for load_kwh, pv_kwh in zip(loads.tolist(), pv_generation.tolist()):
+        direct = load_kwh if load_kwh < pv_kwh else pv_kwh
+        remaining = load_kwh - direct
+        surplus = pv_kwh - direct
+        charge = 0.0
+        discharge = 0.0
+        if capacity > 0 and surplus > 0 and charge_limit > 0:
+            max_input = surplus if surplus < charge_limit else charge_limit
+            room = capacity - soc
+            if room < 0.0:
+                room = 0.0
+            max_by_capacity = room / charge_efficiency
+            charge = max_input if max_input < max_by_capacity else max_by_capacity
+            soc += charge * charge_efficiency
+            surplus -= charge
+        if capacity > 0 and remaining > 0 and discharge_limit > 0:
+            available = (soc - min_soc) * discharge_efficiency
+            if available < 0.0:
+                available = 0.0
+            discharge = remaining
+            if discharge_limit < discharge:
+                discharge = discharge_limit
+            if available < discharge:
+                discharge = available
+            soc -= discharge / discharge_efficiency
+            remaining -= discharge
+        if soc > capacity:
+            soc = capacity
+        elif soc < min_soc:
+            soc = min_soc
+        grid_total += remaining
+        direct_total += direct
+        charge_total += charge
+        discharge_total += discharge
+        curtailed_total += surplus
+    return SizingMetrics(
+        simulated_grid_kwh=grid_total,
+        direct_pv_kwh=direct_total,
+        battery_charge_kwh=charge_total,
+        battery_discharge_kwh=discharge_total,
+        curtailed_pv_kwh=curtailed_total,
+    )
+
+
 class PvBatterySimulator:
     def __init__(self, analyzer: ConsumptionAnalyzer | None = None) -> None:
         self.analyzer = analyzer or ConsumptionAnalyzer()
