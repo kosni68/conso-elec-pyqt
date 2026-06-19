@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-19" version="21.0.0">
+  <diagram id="inst_pv" name="Installation PV Solaire">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TITRE -->
+        <mxCell id="title" value="INSTALLATION SOLAIRE &#x2014; 18 panneaux AIKO | RS450/100 + 2x MPPT 150/35 | Multiplus-II 10000VA | Pylontech 48V" style="text;html=1;strokeColor=none;fillColor=#f0f0f0;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="10" width="980" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- BACKGROUNDS SECTIONS -->
+        <!-- ======================================================== -->
+
+        <mxCell id="bg1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffbe6;strokeColor=#d6b656;dashed=1;arcSize=2;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="10" y="55" width="355" height="450" as="geometry"/>
+        </mxCell>
+        <mxCell id="bg1_lbl" value="Chaine RS450/100 — 12x AIKO (3 strings 4S1P)" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="10" y="58" width="355" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="bg2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f4fd;strokeColor=#3498db;dashed=1;arcSize=2;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="380" y="55" width="215" height="450" as="geometry"/>
+        </mxCell>
+        <mxCell id="bg2_lbl" value="MPPT 150/35 — 3x AIKO Standard" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="380" y="58" width="215" height="16" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="bg3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eafaea;strokeColor=#27ae60;dashed=1;arcSize=2;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="610" y="55" width="215" height="450" as="geometry"/>
+        </mxCell>
+        <mxCell id="bg3_lbl" value="MPPT 150/35 — 3x AIKO Bifacial" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=9;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="610" y="58" width="215" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- PV STRINGS RS450/100 (3 strings x 4 panneaux en serie) -->
+        <!-- ======================================================== -->
+
+        <mxCell id="pv1a" value="&lt;b&gt;String 1&lt;/b&gt;&lt;br/&gt;4x AIKO 450Wc&lt;br/&gt;Voc=198V | Isc=11.6A&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable 4mm² PV1-F&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFD700;strokeColor=#B8860B;fontSize=9;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="20" y="80" width="95" height="75" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="pv1b" value="&lt;b&gt;String 2&lt;/b&gt;&lt;br/&gt;4x AIKO 450Wc&lt;br/&gt;Voc=198V | Isc=11.6A&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable 4mm² PV1-F&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFD700;strokeColor=#B8860B;fontSize=9;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="135" y="80" width="95" height="75" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="pv1c" value="&lt;b&gt;String 3&lt;/b&gt;&lt;br/&gt;4x AIKO 450Wc&lt;br/&gt;Voc=198V | Isc=11.6A&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable 4mm² PV1-F&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFD700;strokeColor=#B8860B;fontSize=9;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="250" y="80" width="95" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- PV STRING MPPT 150/35 #1 -->
+        <!-- ======================================================== -->
+
+        <mxCell id="pv2" value="&lt;b&gt;String 1&lt;/b&gt;&lt;br/&gt;3x AIKO 450Wc&lt;br/&gt;Voc=148.5V | Isc=11.6A&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable 4mm² PV1-F&lt;/font&gt;&lt;br/&gt;&lt;font color=&apos;#c0392b&apos;&gt;⚠ Voc proche 150V max&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFD700;strokeColor=#B8860B;fontSize=8;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="440" y="80" width="95" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- PV STRING MPPT 150/35 #2 (BIFACIAL) -->
+        <!-- ======================================================== -->
+
+        <mxCell id="pv3" value="&lt;b&gt;String 1&lt;/b&gt;&lt;br/&gt;3x AIKO Bifacial 450Wc&lt;br/&gt;Voc=148.5V | Isc=11.6A&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable 4mm² PV1-F&lt;/font&gt;&lt;br/&gt;&lt;font color=&apos;#c0392b&apos;&gt;⚠ Voc proche 150V max&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#90EE90;strokeColor=#27ae60;fontSize=8;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="668" y="80" width="95" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- COMBINER BOX + PARAFOUDRE DC RS450/100 -->
+        <!-- ======================================================== -->
+
+        <mxCell id="comb1" value="&lt;b&gt;Boite Combineur DC&lt;/b&gt;&lt;br/&gt;3x Fusible string 15A (MC4)&lt;br/&gt;3x Diodes anti-retour (opt.)&lt;br/&gt;&lt;font color=&apos;#c0392b&apos;&gt;Parafoudre DC Type 2 — 600V / 20kA&lt;/font&gt;&lt;br/&gt;Sectionneur DC bipolaire 40A&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable sortie: 6mm²&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="65" y="215" width="245" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- PARAFOUDRE DC + SECTIONNEUR MPPT 150/35 #1 -->
+        <!-- ======================================================== -->
+
+        <mxCell id="spd1" value="&lt;b&gt;Protection DC&lt;/b&gt;&lt;br/&gt;&lt;font color=&apos;#c0392b&apos;&gt;Parafoudre DC Type 2 — 150V / 20kA&lt;/font&gt;&lt;br/&gt;Sectionneur DC bipolaire 20A&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable: 4mm²&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="388" y="225" width="190" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- PARAFOUDRE DC + SECTIONNEUR MPPT 150/35 #2 -->
+        <!-- ======================================================== -->
+
+        <mxCell id="spd2" value="&lt;b&gt;Protection DC&lt;/b&gt;&lt;br/&gt;&lt;font color=&apos;#c0392b&apos;&gt;Parafoudre DC Type 2 — 150V / 20kA&lt;/font&gt;&lt;br/&gt;Sectionneur DC bipolaire 20A&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable: 4mm²&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="618" y="225" width="190" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- MPPT RS 450/100 -->
+        <!-- ======================================================== -->
+
+        <mxCell id="mppt_rs" value="&lt;b&gt;Victron SmartSolar MPPT RS 450/100&lt;/b&gt;&lt;br/&gt;Vin max: 450V | Iout max: 100A&lt;br/&gt;Vbat: 48V | Communication: VE.Can&lt;br/&gt;Puissance max chargeur: 5800W&lt;br/&gt;&lt;font color=&apos;#ecf0f1&apos;&gt;Cable batterie: 35mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#1a5276;fontColor=#ffffff;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="65" y="360" width="245" height="95" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- MPPT 150/35 #1 -->
+        <!-- ======================================================== -->
+
+        <mxCell id="mppt1" value="&lt;b&gt;Victron SmartSolar MPPT 150/35&lt;/b&gt;&lt;br/&gt;Vin max: 150V | Iout max: 35A&lt;br/&gt;Vbat: 48V | Communication: VE.Direct&lt;br/&gt;&lt;font color=&apos;#ecf0f1&apos;&gt;Cable batterie: 10mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#1a5276;fontColor=#ffffff;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="388" y="355" width="185" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- MPPT 150/35 #2 (BIFACIAL) -->
+        <!-- ======================================================== -->
+
+        <mxCell id="mppt2" value="&lt;b&gt;Victron SmartSolar MPPT 150/35&lt;/b&gt;&lt;br/&gt;Vin max: 150V | Iout max: 35A&lt;br/&gt;Vbat: 48V | VE.Direct&lt;br/&gt;&lt;font color=&apos;#90EE90&apos;&gt;PANNEAUX BIFACIAUX&lt;/font&gt;&lt;br/&gt;&lt;font color=&apos;#ecf0f1&apos;&gt;Cable batterie: 10mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#1a5276;fontColor=#ffffff;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="618" y="355" width="185" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- FUSIBLES ANL (cote batterie MPPT) -->
+        <!-- ======================================================== -->
+
+        <mxCell id="anl_rs" value="&lt;b&gt;Fusible ANL 125A&lt;/b&gt;&lt;br/&gt;Porte-fusible etanche IP65&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable: 35mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="125" y="500" width="125" height="55" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="anl_m1" value="&lt;b&gt;Fusible ANL 40A&lt;/b&gt;&lt;br/&gt;Porte-fusible&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable: 10mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="435" y="500" width="105" height="55" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="anl_m2" value="&lt;b&gt;Fusible ANL 40A&lt;/b&gt;&lt;br/&gt;Porte-fusible&lt;br/&gt;&lt;font color=&apos;#888888&apos;&gt;Cable: 10mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="665" y="500" width="105" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- VICTRON LYNX SYSTEM -->
+        <!-- ======================================================== -->
+
+        <mxCell id="lynx_pi" value="&lt;b&gt;Victron Lynx Power In&lt;/b&gt;&lt;br/&gt;Bus DC — 1000A max&lt;br/&gt;Entrees: batteries + MPPTs&lt;br/&gt;&lt;font color=&apos;#ecf0f1&apos;&gt;Cable principal: 70mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a252f;strokeColor=#0d1721;fontColor=#ecf0f1;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="615" width="195" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lynx_sh" value="&lt;b&gt;Victron Lynx Shunt VE.Can&lt;/b&gt;&lt;br/&gt;Moniteur 1000A&lt;br/&gt;Mesure courant batterie&lt;br/&gt;&lt;font color=&apos;#ecf0f1&apos;&gt;Cable: 70mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c3e50;strokeColor=#1a252f;fontColor=#ecf0f1;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="230" y="615" width="155" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lynx_di" value="&lt;b&gt;Victron Lynx Distributor&lt;/b&gt;&lt;br/&gt;4 sorties avec fusibles NH&lt;br/&gt;Vers Multiplus + Charges DC&lt;br/&gt;&lt;font color=&apos;#ecf0f1&apos;&gt;Cable: 70mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a252f;strokeColor=#0d1721;fontColor=#ecf0f1;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="615" width="195" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- BATTERIE PYLONTECH -->
+        <!-- ======================================================== -->
+
+        <mxCell id="pylontech" value="&lt;b&gt;Batteries Pylontech&lt;/b&gt;&lt;br/&gt;BMS integre (protection interne)&lt;br/&gt;Tension nominale: 48V DC&lt;br/&gt;Communication: CAN Bus (Cerbo GX)&lt;br/&gt;&lt;font color=&apos;#ffd700&apos;&gt;Fusible externe: 250A (ANL / NH)&lt;/font&gt;&lt;br/&gt;&lt;font color=&apos;#ecf0f1&apos;&gt;Cable: 70mm² ou 95mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e8449;strokeColor=#145a32;fontColor=#ffffff;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="760" width="195" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- Fusible batterie externe -->
+        <mxCell id="fuse_bat" value="&lt;b&gt;Fusible / Disj. 250A&lt;/b&gt;&lt;br/&gt;Entre batterie et Lynx&lt;br/&gt;Cable: 95mm²" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="50" y="700" width="130" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- VICTRON MULTIPLUS-II 10000 -->
+        <!-- ======================================================== -->
+
+        <mxCell id="multiplus" value="&lt;b&gt;Victron Multiplus-II 10000VA&lt;/b&gt;&lt;br/&gt;48V / 10000VA / 140-100A&lt;br/&gt;Onduleur + Chargeur integre&lt;br/&gt;AC In/Out: 230V / 50Hz&lt;br/&gt;&lt;font color=&apos;#f39c12&apos;&gt;Fusible DC interne 200A&lt;/font&gt;&lt;br/&gt;&lt;font color=&apos;#ecf0f1&apos;&gt;Cable DC: 70mm² | Cable AC: 6mm²&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6c3483;strokeColor=#4a235a;fontColor=#ffffff;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="755" width="195" height="130" as="geometry"/>
+        </mxCell>
+
+        <!-- Fusible DC Multiplus -->
+        <mxCell id="fuse_mp" value="&lt;b&gt;Fusible ANL 250A&lt;/b&gt;&lt;br/&gt;Cote DC Multiplus&lt;br/&gt;Cable: 70mm²" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="430" y="705" width="130" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- RESEAU AC -->
+        <!-- ======================================================== -->
+
+        <mxCell id="grid_ac" value="&lt;b&gt;Reseau AC&lt;/b&gt;&lt;br/&gt;230V / 50Hz&lt;br/&gt;Entree chargeur&lt;br/&gt;Cable: 6mm²" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e74c3c;strokeColor=#922b21;fontColor=#ffffff;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="635" y="775" width="125" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Disjoncteur entree reseau -->
+        <mxCell id="dj_grid" value="&lt;b&gt;Disjoncteur 2P 50A&lt;/b&gt;&lt;br/&gt;Protection entree reseau&lt;br/&gt;Cable: 6mm²" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="638" y="870" width="120" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- PROTECTION AC SORTIE ONDULEUR -->
+        <!-- ======================================================== -->
+
+        <mxCell id="spd_ac" value="&lt;b&gt;Parafoudre AC Type 2&lt;/b&gt;&lt;br/&gt;230V AC / 40kA&lt;br/&gt;Protection sortie onduleur&lt;br/&gt;+ Disjoncteur 2P 10A (prot. parafoudre)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="400" y="940" width="195" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="diff_ac" value="&lt;b&gt;Disjoncteur differentiel&lt;/b&gt;&lt;br/&gt;2P 40A — 30mA Type A&lt;br/&gt;Cable sortie: 6mm²" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#c0392b;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1060" width="195" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="tac" value="&lt;b&gt;Tableau Distribution AC&lt;/b&gt;&lt;br/&gt;Disjoncteurs par circuit: 10A / 16A / 20A&lt;br/&gt;Cables: 1.5mm² a 6mm² selon circuit&lt;br/&gt;+ Differentiel 30mA par groupe de circuits" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7f8c8d;strokeColor=#5d6d7e;fontColor=#ffffff;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="355" y="1170" width="290" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CERBO GX -->
+        <!-- ======================================================== -->
+
+        <mxCell id="cerbo" value="&lt;b&gt;Victron Cerbo GX&lt;/b&gt;&lt;br/&gt;Supervision systeme&lt;br/&gt;VE.Can (RS450, Lynx Shunt)&lt;br/&gt;VE.Direct (MPPT 150/35 x2)&lt;br/&gt;CAN Bus (Pylontech)&lt;br/&gt;VE.Bus (Multiplus-II)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c3e50;strokeColor=#1a252f;fontColor=#ecf0f1;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="840" y="615" width="180" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- MISE A LA TERRE -->
+        <!-- ======================================================== -->
+
+        <mxCell id="terre" value="&lt;b&gt;Barrette de terre principale&lt;/b&gt;&lt;br/&gt;Chassis panneaux PV&lt;br/&gt;Boitier MPPT / Multiplus&lt;br/&gt;Chassis batterie Pylontech&lt;br/&gt;Cable terre: vert/jaune 16mm² min." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#36BA98;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="840" y="740" width="180" height="95" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- LEGENDE -->
+        <!-- ======================================================== -->
+
+        <mxCell id="legend" value="&lt;b&gt;LEGENDE&lt;/b&gt;&lt;br/&gt;&lt;font color=&apos;#B8860B&apos;&gt;████&lt;/font&gt; Panneaux PV Standard (AIKO)&lt;br/&gt;&lt;font color=&apos;#27ae60&apos;&gt;████&lt;/font&gt; Panneaux PV Bifacial (AIKO)&lt;br/&gt;&lt;font color=&apos;#2980b9&apos;&gt;████&lt;/font&gt; Regulateurs MPPT Victron&lt;br/&gt;&lt;font color=&apos;#c0392b&apos;&gt;████&lt;/font&gt; Protections (fusibles / parafoudres)&lt;br/&gt;&lt;font color=&apos;#1a252f&apos;&gt;████&lt;/font&gt; Bus Victron Lynx&lt;br/&gt;&lt;font color=&apos;#1e8449&apos;&gt;████&lt;/font&gt; Batterie Pylontech&lt;br/&gt;&lt;font color=&apos;#6c3483&apos;&gt;████&lt;/font&gt; Onduleur/Chargeur Multiplus&lt;br/&gt;&lt;font color=&apos;#e74c3c&apos;&gt;████&lt;/font&gt; Reseau electrique AC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666;fontSize=9;align=left;verticalAlign=top;spacingLeft=6;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="840" y="80" width="195" height="200" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- NOTES TECHNIQUES -->
+        <!-- ======================================================== -->
+
+        <mxCell id="notes" value="&lt;b&gt;NOTES TECHNIQUES&lt;/b&gt;&lt;br/&gt;• Systeme 48V DC nominal&lt;br/&gt;• Puissance totale PV: 8100 Wc (18x450Wc)&lt;br/&gt;• RS450/100: config 4S3P&lt;br/&gt;  Vin=166Vmp / 198Voc | Iout=32.4A (100A max)&lt;br/&gt;• MPPT 150/35: config 3S1P&lt;br/&gt;  &lt;font color=&apos;#c0392b&apos;&gt;⚠ Voc=148.5V tres proche 150V max !&lt;/font&gt;&lt;br/&gt;  Verifier coeff. temp. en hiver (-10°C)&lt;br/&gt;• Cables solaires: PV1-F ou H1Z2Z2-K&lt;br/&gt;• DC: rouge(+) / noir(-) | AC: brun(L)/bleu(N)/vert-jaune(PE)&lt;br/&gt;• Mise a la terre obligatoire tous elements&lt;br/&gt;• Normes: NF C 15-100 + NF EN 50539-11&lt;br/&gt;• Parafoudres DC: emplacement pres du toit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#f9a825;fontSize=8;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="840" y="295" width="200" height="280" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CONNEXIONS DC (PV vers combineur/MPPT) -->
+        <!-- ======================================================== -->
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#B8860B;strokeWidth=2;" edge="1" source="pv1a" target="comb1" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#B8860B;strokeWidth=2;" edge="1" source="pv1b" target="comb1" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#B8860B;strokeWidth=2;" edge="1" source="pv1c" target="comb1" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e4" value="6mm² DC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#B8860B;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="comb1" target="mppt_rs" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#B8860B;strokeWidth=2;" edge="1" source="pv2" target="spd1" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" value="4mm² DC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#B8860B;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="spd1" target="mppt1" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#27ae60;strokeWidth=2;" edge="1" source="pv3" target="spd2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" value="4mm² DC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#27ae60;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="spd2" target="mppt2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CONNEXIONS DC (MPPT vers Lynx) -->
+        <!-- ======================================================== -->
+
+        <mxCell id="e9" value="35mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#2980b9;strokeWidth=3;fontSize=9;fontStyle=1;" edge="1" source="mppt_rs" target="anl_rs" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" value="35mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#1a252f;strokeWidth=3;fontSize=9;fontStyle=1;" edge="1" source="anl_rs" target="lynx_pi" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e11" value="10mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#2980b9;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="mppt1" target="anl_m1" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e12" value="10mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#1a252f;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="anl_m1" target="lynx_di" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e13" value="10mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#2980b9;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="mppt2" target="anl_m2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e14" value="10mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#1a252f;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="anl_m2" target="lynx_di" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CONNEXIONS LYNX BUS -->
+        <!-- ======================================================== -->
+
+        <mxCell id="e15" value="70mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#1a252f;strokeWidth=4;fontSize=9;fontStyle=1;" edge="1" source="lynx_pi" target="lynx_sh" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e16" value="70mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#1a252f;strokeWidth=4;fontSize=9;fontStyle=1;" edge="1" source="lynx_sh" target="lynx_di" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CONNEXION BATTERIE -->
+        <!-- ======================================================== -->
+
+        <mxCell id="e17" value="95mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#1e8449;strokeWidth=4;fontSize=9;fontStyle=1;" edge="1" source="pylontech" target="fuse_bat" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e18" value="95mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#1e8449;strokeWidth=4;fontSize=9;fontStyle=1;" edge="1" source="fuse_bat" target="lynx_pi" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CONNEXION MULTIPLUS DC -->
+        <!-- ======================================================== -->
+
+        <mxCell id="e19" value="70mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#6c3483;strokeWidth=4;fontSize=9;fontStyle=1;" edge="1" source="lynx_di" target="fuse_mp" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e20" value="70mm²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#6c3483;strokeWidth=4;fontSize=9;fontStyle=1;" edge="1" source="fuse_mp" target="multiplus" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CONNEXION RESEAU AC + PROTECTION -->
+        <!-- ======================================================== -->
+
+        <mxCell id="e21" value="6mm² AC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e74c3c;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="grid_ac" target="dj_grid" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e22" value="6mm² AC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#e74c3c;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="dj_grid" target="multiplus" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ======================================================== -->
+        <!-- CONNEXION SORTIE AC ONDULEUR -->
+        <!-- ======================================================== -->
+
+        <mxCell id="e23" value="6mm² AC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#6c3483;strokeWidth=2;fontSize=9;fontStyle=1;" edge="1" source="multiplus" target="spd_ac" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeColor=#c0392b;strokeWidth=2;" edge="1" source="spd_ac" target="diff_ac" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" edge="1" source="diff_ac" target="tac" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
