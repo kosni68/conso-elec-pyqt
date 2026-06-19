@@ -1,0 +1,2 @@
+Convertisseur-chargeur 10000VA 48V - 140/100 - MultiPlus II - Victron Energy : 1 667,70 €
+https://kitsolaire-discount.com/fr/multiplus/2150-convertisseur-chargeur-10000va-48v-140100-multiplus-ii-victron-energy-9331416834530.html
