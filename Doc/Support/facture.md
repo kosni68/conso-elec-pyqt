@@ -1,0 +1,3 @@
+| Description | Qté | Prix unitaire HT | Taux TVA | Prix unitaire TTC | Total TTC |
+|------------|-----|------------------|----------|-------------------|-----------|
+| BOSYTRO Kit de Montage PV pour 4 Module, Support de Panneau Solaire, Rail Noir de 12 CM, Clips de Drainage d'eau 30 MM, Pince Réglable pour Modules de 30 à 35 mm d'épaisseur - Pour toit plat, trapézoïdal (ASIN: B0F7Y2HF28) | 3 | 34,03 € | 20 % | 40,84 € | 122,52 € |
