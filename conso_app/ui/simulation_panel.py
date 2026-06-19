@@ -36,15 +36,15 @@ class SimulationPanel(QWidget):
 
         self.base_rate_spin = self._make_spinbox(0.0, 5.0, 4, DEFAULT_BASE_RATE_EUR_KWH, suffix=" €/kWh")
         self.base_rate_spin.valueChanged.connect(self.base_rate_changed.emit)
-        self.pv_power_spin = self._make_spinbox(0.0, 30.0, 2, 6.0, suffix=" kWc")
+        self.pv_power_spin = self._make_spinbox(0.0, 30.0, 2, 9.0, suffix=" kWc")
         self.pv_yield_spin = self._make_spinbox(100.0, 2000.0, 0, 1200.0, suffix=" kWh/kWc/an")
-        self.pv_cost_spin = self._make_optional_money_spinbox()
-        self.battery_capacity_spin = self._make_spinbox(0.0, 100.0, 2, 5.0, suffix=" kWh")
-        self.charge_power_spin = self._make_spinbox(0.0, 30.0, 2, 2.5, suffix=" kW")
-        self.discharge_power_spin = self._make_spinbox(0.0, 30.0, 2, 2.5, suffix=" kW")
+        self.pv_cost_spin = self._make_optional_money_spinbox(7497.0)
+        self.battery_capacity_spin = self._make_spinbox(0.0, 100.0, 2, 14.4, suffix=" kWh")
+        self.charge_power_spin = self._make_spinbox(0.0, 30.0, 2, 8.0, suffix=" kW")
+        self.discharge_power_spin = self._make_spinbox(0.0, 30.0, 2, 8.0, suffix=" kW")
         self.efficiency_spin = self._make_spinbox(1.0, 100.0, 1, 90.0, suffix=" %")
         self.min_soc_spin = self._make_spinbox(0.0, 100.0, 1, 10.0, suffix=" %")
-        self.battery_cost_spin = self._make_optional_money_spinbox()
+        self.battery_cost_spin = self._make_optional_money_spinbox(2847.0)
 
         controls_form.addRow("Tarif base", self.base_rate_spin)
         controls_form.addRow("Puissance PV", self.pv_power_spin)
@@ -238,7 +238,7 @@ class SimulationPanel(QWidget):
         widget.setAlignment(Qt.AlignmentFlag.AlignRight)
         return widget
 
-    def _make_optional_money_spinbox(self) -> NoWheelDoubleSpinBox:
-        widget = self._make_spinbox(0.0, 100000.0, 0, 0.0, suffix=" €")
+    def _make_optional_money_spinbox(self, value: float = 0.0) -> NoWheelDoubleSpinBox:
+        widget = self._make_spinbox(0.0, 100000.0, 0, value, suffix=" €")
         widget.setSpecialValueText("Non renseigné")
         return widget

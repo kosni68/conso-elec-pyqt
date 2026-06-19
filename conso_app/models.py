@@ -15,18 +15,21 @@ class TariffConfig:
     day_end: time = time(22, 0)
 
 
+# Installation réelle : 18 panneaux 500 W (≈ 9 kWc), 3 × Pylontech US5000 (14,4 kWh),
+# onduleur-chargeur Victron MultiPlus-II 48/10000 + MPPT RS 450/100 et 2× 150/35.
+# Coûts matériel TTC (Doc/cout_installation.md) : PV/système 7 497 €, batterie 2 847 €.
 @dataclass(frozen=True, slots=True)
 class SolarConfig:
-    pv_kwc: float = 6.0
+    pv_kwc: float = 9.0
     specific_yield_kwh_per_kwc_year: float = 1200.0
     capex_eur: Optional[float] = None
 
 
 @dataclass(frozen=True, slots=True)
 class BatteryConfig:
-    capacity_kwh: float = 5.0
-    charge_power_kw: float = 2.5
-    discharge_power_kw: float = 2.5
+    capacity_kwh: float = 14.4
+    charge_power_kw: float = 8.0
+    discharge_power_kw: float = 8.0
     roundtrip_efficiency: float = 0.90
     min_soc_pct: float = 10.0
     capex_eur: Optional[float] = None
