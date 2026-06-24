@@ -77,40 +77,62 @@ def make_inverseur(fn, W=300, H=300):
 make_inverseur("inverseur_source.png")
 
 # ---------- 3. generate LYNX DISTRIBUTOR fuse-bank (sits on the + bus) ----------
-def make_lynx(fn, W=1080, H=150, fracs=(0.21, 0.40, 0.58, 0.90)):
+# A real Victron Lynx Distributor has exactly 4 MEGA-fuse positions. We draw the
+# unit COMPACT (slots tightly pitched) so several units can be bolted together
+# ("accoles") on the same + busbar. One 4-slot unit holds the MPPT fuses, a 2nd
+# unit glued alongside holds the 2x 200A MEGA fuses feeding the MultiPlus.
+def make_lynx(fn, n_slots=4, slot_labels=None, title="LYNX DISTRIBUTOR",
+              bus_label="+ BUS 48V", holder_w=88, pitch=112, side=20, H=128):
+    body_bot = H - 26
+    W = side * 2 + holder_w + (n_slots - 1) * pitch
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     # dark DIN enclosure
-    d.rounded_rectangle([4, 4, W - 5, H - 30], radius=14, fill=(44, 47, 53), outline=(20, 22, 26), width=3)
-    # thin red strip along the very bottom = mounts on the + bus
-    d.rounded_rectangle([10, H - 30, W - 10, H - 6], radius=6, fill=(198, 30, 30))
-    f = load_font(15)
-    d.text((22, H - 27), "+ BUS 48V", fill=(255, 235, 235), font=f)
-    holder_w = 150
-    for fr in fracs:
-        midx = int(W * fr)
-        x0, x1 = midx - holder_w // 2, midx + holder_w // 2
-        # clear fuse holder body
-        d.rounded_rectangle([x0, 18, x1, 96], radius=8, fill=(206, 224, 236), outline=(120, 140, 152), width=2)
-        # two bolt terminals + fuse element
-        d.ellipse([x0 + 14, 50, x0 + 38, 74], fill=(225, 227, 230), outline=(120, 124, 128), width=2)
-        d.ellipse([x1 - 38, 50, x1 - 14, 74], fill=(225, 227, 230), outline=(120, 124, 128), width=2)
-        d.line([x0 + 26, 62, x1 - 26, 62], fill=(150, 110, 40), width=5)
-        # green status LED
-        d.ellipse([midx - 9, 26, midx + 9, 44], fill=(70, 210, 90), outline=(40, 130, 55), width=2)
-        # stud down to red bus strip
-        d.line([midx, 96, midx, H - 30], fill=(225, 227, 230), width=6)
-    ft = load_font(15)
-    d.text((W - 250, H - 27), "LYNX DISTRIBUTOR", fill=(255, 235, 235), font=ft)
+    d.rounded_rectangle([3, 3, W - 4, body_bot], radius=12, fill=(44, 47, 53), outline=(20, 22, 26), width=3)
+    # red strip along the bottom = the + busbar the unit clamps onto
+    d.rounded_rectangle([7, body_bot, W - 7, H - 4], radius=6, fill=(198, 30, 30))
+    fb = load_font(13)
+    if bus_label:
+        d.text((14, body_bot + 4), bus_label, fill=(255, 235, 235), font=fb)
+    centers = [side + holder_w // 2 + i * pitch for i in range(n_slots)]
+    top, bot = 11, body_bot - 9
+    fl = load_font(13)
+    for i, cx in enumerate(centers):
+        x0, x1 = cx - holder_w // 2, cx + holder_w // 2
+        # clear MEGA fuse-holder body
+        d.rounded_rectangle([x0, top, x1, bot], radius=7, fill=(206, 224, 236), outline=(120, 140, 152), width=2)
+        # green status LED near the top
+        d.ellipse([cx - 8, top + 7, cx + 8, top + 23], fill=(70, 210, 90), outline=(40, 130, 55), width=2)
+        # two bolt terminals + brown fuse element
+        ty = top + 36
+        d.ellipse([x0 + 11, ty, x0 + 29, ty + 18], fill=(225, 227, 230), outline=(120, 124, 128), width=2)
+        d.ellipse([x1 - 29, ty, x1 - 11, ty + 18], fill=(225, 227, 230), outline=(120, 124, 128), width=2)
+        d.line([x0 + 20, ty + 9, x1 - 20, ty + 9], fill=(150, 110, 40), width=5)
+        # per-slot rating label
+        lbl = slot_labels[i] if (slot_labels and i < len(slot_labels)) else ""
+        if lbl:
+            tw = d.textlength(lbl, font=fl)
+            d.text((cx - tw / 2, bot - 17), lbl, fill=(35, 48, 60), font=fl)
+        # stud down onto the red + busbar
+        d.line([cx, bot, cx, body_bot], fill=(225, 227, 230), width=6)
+    ft = load_font(13)
+    if title:
+        tw = d.textlength(title, font=ft)
+        d.text((W - tw - 14, body_bot + 4), title, fill=(255, 235, 235), font=ft)
     img.save(os.path.join(ASSETS, fn))
     print("gen", fn, img.size)
 
-make_lynx("lynx_fuses.png")
+# unit 1 : MPPT fuses (3 used + 1 spare) ; unit 2 : 2x 200A MEGA for the MultiPlus.
+# unit 2 sits left-most on the bus, so it carries the "+ BUS 48V" label.
+make_lynx("lynx_fuses.png", n_slots=4, slot_labels=["125A", "50A", "50A", "libre"],
+          title="LYNX DISTRIBUTOR", bus_label="")
+make_lynx("lynx_mega.png", n_slots=2, slot_labels=["200A", "200A"],
+          title="MEGA", bus_label="+ BUS 48V")
 
 # ---------- 4. rebuild imgdata.json ----------
 names = ["aiko_mono.png", "aiko_bifacial.png", "rs450_100.png", "mppt_150_35.png",
          "multiplus_10k.png", "pylontech_us5000.png", "cerbo_gx.png", "battery_switch.png",
-         "lynx_fuses.png", "parafoudre_dc.png", "parafoudre_ac.png", "fusible_mega.png",
+         "lynx_fuses.png", "lynx_mega.png", "parafoudre_dc.png", "parafoudre_ac.png", "fusible_mega.png",
          "inverseur_source.png"]
 data = {}
 for n in names:

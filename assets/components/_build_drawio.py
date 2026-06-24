@@ -104,16 +104,15 @@ node("warn",
      1340, 232, 275, 92,
      "rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#F39C12;fontSize=9;align=left;spacingLeft=8;")
 
-# ---- DC BUS = LYNX fuse-bank (fusibles MPPT) + barres ----
-node("fzA", "125A", A-22, 574, 44, 18, TXTc)
-node("fzB", "50A",  B-16, 574, 32, 18, TXTc)
-node("fzC", "50A",  C-16, 574, 32, 18, TXTc)
-img("lynx_img", "lynx_fuses.png", 250, 596, 1080, 98)
+# ---- DC BUS = 2x LYNX DISTRIBUTOR accoles (fusibles MPPT + 2x 200A MEGA) + barres ----
+# unit 2 (2x 200A MEGA -> MultiPlus) glued left, unit 1 (4 MPPT slots) glued right
+img("lynxMega_img", "lynx_mega.png",  480, 586, 240, 128)
+img("lynx_img",     "lynx_fuses.png", 720, 586, 464, 128)
 node("busPos", "", 250, 690, 1080, 20, "rounded=2;whiteSpace=wrap;html=1;fillColor=#E60000;strokeColor=#8B0000;")
 node("busNeg", MIN + " BUS 48V (negatif commun)", 250, 718, 1080, 22,
      "rounded=2;whiteSpace=wrap;html=1;fillColor=#1A1A1A;strokeColor=#000000;fontColor=#FFFFFF;fontSize=11;fontStyle=1;")
-node("lynxNote", "<b>Fusibles MPPT sur Lynx Distributor</b> (porte-fusibles MEGA a LED d'etat) " + ARR, 30, 632, 218, 30,
-     "text;html=1;strokeColor=none;fillColor=none;align=right;fontSize=9;fontColor=#10293b;")
+node("lynxNote", "<b>2" + X + " Lynx Distributor accoles</b><br/>4 fusibles MPPT (1 slot libre)<br/>+ 2" + X + " 200A MEGA " + ARR + " MultiPlus " + ARR,
+     24, 600, 224, 50, "text;html=1;strokeColor=none;fillColor=none;align=right;fontSize=9;fontColor=#10293b;")
 
 # ---- BATTERY ----
 img("bat1", "pylontech_us5000.png", 70, 800, 170, 65)
@@ -128,8 +127,6 @@ node("batSw_lbl", "Sectionneur batterie 275A", 280, 948, 126, 16, TXTc)
 
 # ---- MULTIPLUS ----
 img("mp_img", "multiplus_10k.png", 540, 812, 120, 200)
-img("mpFuse", "fusible_mega.png", 548, 756, 100, 50)
-node("mpFuse_lbl", "2" + X + " Fusible 200A MEGA", 520, 740, 160, 16, TXTc)
 node("mp_lbl", "<b>Victron MultiPlus-II 48/10000</b><br/>Onduleur off-grid + Chargeur<br/>10000VA " + MID + " charge 140A " + MID + " VE.Bus",
      672, 892, 168, 92, "rounded=1;whiteSpace=wrap;html=1;fillColor=#D6EAF8;strokeColor=#2E86C1;fontSize=9;align=center;")
 node("acInNote", "<b>AC-In NON raccorde</b><br/>Installation isolee d'EDF :<br/>pas de charge/transfert<br/>depuis le reseau<br/>(reserve groupe electrogene)",
@@ -167,10 +164,10 @@ edge("e_cA", "coffA_box", "rs450_img", EDC, "6mm" + SQ)
 edge("e_cB", "coffB_box", "mppt1_img", EDC, "6mm" + SQ)
 edge("e_cC", "coffC_box", "mppt2_img", EDCb, "6mm" + SQ)
 
-# MPPT + -> fusibles sur le Lynx (top du banc de fusibles)
-edge("e_rs_f", "rs450_img", "lynx_img", EP + "exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.213;entryY=0;entryDx=0;entryDy=0;", "16mm" + SQ)
-edge("e_m1_f", "mppt1_img", "lynx_img", EP + "exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.583;entryY=0;entryDx=0;entryDy=0;", "10mm" + SQ)
-edge("e_m2_f", "mppt2_img", "lynx_img", EP + "exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.907;entryY=0;entryDx=0;entryDy=0;", "10mm" + SQ)
+# MPPT + -> fusibles sur le Lynx unit 1 (slots 1/2/3, slot 4 libre)
+edge("e_rs_f", "rs450_img", "lynx_img", EP + "exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.138;entryY=0;entryDx=0;entryDy=0;", "16mm" + SQ)
+edge("e_m1_f", "mppt1_img", "lynx_img", EP + "exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.379;entryY=0;entryDx=0;entryDy=0;", "10mm" + SQ)
+edge("e_m2_f", "mppt2_img", "lynx_img", EP + "exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.621;entryY=0;entryDx=0;entryDy=0;", "10mm" + SQ)
 # MPPT - -> busNeg
 edge("e_rs_n", "rs450_img", "busNeg",
      "edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeColor=#111111;strokeWidth=2;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.21;entryY=0;", MIN)
@@ -187,9 +184,10 @@ edge("e_fb", "batFuse", "busPos", EP, "", [(338, 712)])
 edge("e_bs", "bat3", "batSwitch", EN, "2" + X + "50mm" + SQ + " " + MIN)
 edge("e_sb", "batSwitch", "busNeg", EN)
 
-# bus -> multiplus
-edge("e_mp_pf", "busPos", "mpFuse", EP, "2" + X + "50mm" + SQ + " +")
-edge("e_mpf_mp", "mpFuse", "mp_img", EP)
+# bus -> multiplus  (+ protege par les 2x 200A MEGA du 2e Lynx Distributor)
+edge("e_mp_pos", "lynxMega_img", "mp_img",
+     EP + "exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;",
+     "2" + X + "50mm" + SQ + " + (2" + X + "200A MEGA)")
 edge("e_mp_n", "busNeg", "mp_img", EN, "2" + X + "50mm" + SQ + " " + MIN)
 
 # AC
