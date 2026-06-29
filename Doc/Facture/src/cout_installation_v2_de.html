@@ -1,0 +1,80 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Kosten der PV-Erweiterung — +12 kWp</title><style>
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@page{size:A4;margin:12mm 11mm}
+body{font-family:"Segoe UI",Arial,sans-serif;color:#1f2933;font-size:10.5px;line-height:1.45;margin:0}
+.header{background:linear-gradient(135deg,#0f766e,#0b3d3a);color:#fff;padding:15px 18px;border-radius:8px}
+.header h1{margin:0;font-size:19px;font-weight:700}
+.header .sub{margin-top:5px;font-size:11px;color:#d1faf4}
+.meta{font-size:9px;color:#6b7280;margin:8px 2px 2px;line-height:1.55}
+.meta code{font-family:Consolas,monospace;color:#0b3d3a;background:#ecfdf9;padding:0 3px;border-radius:3px}
+h2.section{font-size:13px;margin:15px 0 6px;padding:5px 9px;background:#ecfdf9;border-left:4px solid #0f766e;border-radius:3px;color:#0b3d3a;break-after:avoid;page-break-after:avoid}
+h3.sub{font-size:11px;margin:11px 0 4px;color:#374151;display:flex;justify-content:space-between;align-items:flex-end;gap:10px;break-after:avoid;page-break-after:avoid}
+.unit{break-inside:avoid;page-break-inside:avoid}
+h3.sub .desc{font-weight:400;color:#6b7280;font-size:9px}
+.badge{font-size:8.5px;font-weight:600;color:#0b3d3a;background:#d1faf4;padding:2px 8px;border-radius:10px;white-space:nowrap}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:9.3px;margin-bottom:2px}
+thead th{background:#0b3d3a;color:#fff;text-align:left;padding:5px 7px;font-weight:600}
+th.r,td.r{text-align:right}
+th.c,td.c{text-align:center}
+tbody td{padding:4px 7px;border-bottom:1px solid #e3e8ee;vertical-align:top}
+tbody tr:nth-child(even):not(.sum):not(.grand) td{background:#f6fafb}
+td.ref{font-family:Consolas,monospace;font-size:8.6px;color:#475569;white-space:nowrap}
+td.tot{font-weight:700;color:#0b3d3a;white-space:nowrap}
+a.lk{color:#0d9488;text-decoration:none;font-weight:600;white-space:nowrap}
+.src{color:#6b7280;font-size:8.8px}
+tr.sum td{background:#eef6f5;font-weight:600}
+tr.sum td.lbl{text-align:right;color:#374151}
+tr.grand td{background:#0f766e;color:#fff;font-weight:700;font-size:10.2px}
+tr.grand td.lbl{text-align:right}
+tr,td,th{break-inside:avoid;page-break-inside:avoid}
+.note{font-size:8.6px;color:#6b7280;margin:3px 2px 0;font-style:italic}
+ul.notes{font-size:9.4px;margin:5px 0;padding-left:16px}
+ul.notes li{margin:2.5px 0}
+ul.links{font-size:8.7px;color:#475569;margin:4px 0;padding-left:15px;columns:1}
+ul.links li{margin:1.5px 0}
+.footer{margin-top:14px;border-top:1px solid #e3e8ee;padding-top:6px;font-size:8.2px;color:#6b7280;font-style:italic}
+</style></head><body>
+<div class="header">
+  <h1>Kosten der Photovoltaik-Erweiterung — +12 kWp</h1>
+  <div class="sub">Ausbau der 48-V-Anlage — DC-Feld 6 kWp (DC-Kopplung / MPPT) + AC-Feld 6 kWp (Fronius-Wechselrichter, AC-Kopplung) · Preise inkl. MwSt. (€)</div>
+</div>
+<div class="meta">Erstellt am 26.06.2026 — Ergänzung zum Dokument <code>cout_installation_de.pdf</code>. Mengen aus
+<code>installation_pv_synoptique_v2.drawio</code> (Block „EXTENSION V2"). Preise aus den realen Rechnungen übernommen, wenn der Artikel
+identisch ist; mit „Ref." gekennzeichnete Zeilen sind Referenzpreise, im Angebot zu bestätigen.</div>
+
+<h2 class="section">1. DC-Feld — 6 kWp (DC-Kopplung am 48-V-Bus)</h2>
+<h3 class="sub"><span class="desc">12× AiKO 500 W → DC-Schutzkasten → MPPT RS 450/100 → 48-V-Bus</span><span class="badge">Referenz Kitsolaire / Amazon</span></h3>
+<div class="unit"><table><thead><tr><th class="">Produkt</th><th class="c">Art.-Nr.</th><th class="r">Menge</th><th class="r">EP inkl. MwSt.</th><th class="r">Gesamt inkl. MwSt.</th><th class="c">Quelle</th></tr></thead><tbody><tr><td class="">Solarmodul AiKO 500 W NEOSTAR 2S — monokristallin</td><td class="ref c">9059</td><td class="c">12</td><td class="r">108,99 €</td><td class="tot r">1 307,88 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">MPPT-Laderegler RS 450/100 SmartSolar MC4</td><td class="ref c">SCC145110512</td><td class="c">1</td><td class="r">1 063,80 €</td><td class="tot r">1 063,80 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">DC-Schutzkasten 2 PV-Eingänge + Überspannungsschutz</td><td class="ref c">4022</td><td class="c">1</td><td class="r">209,99 €</td><td class="tot r">209,99 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">PV-Montagesatz BOSYTRO (Schiene + Clips, 4 Module)</td><td class="ref c">B0F7Y2HF28</td><td class="c">3</td><td class="r">40,84 €</td><td class="tot r">122,52 €</td><td class="c"><span class="src">Amazon</span></td></tr><tr><td class="">Kabel 25 mm² rot — MPPT → 48-V-Bus (pro Meter)</td><td class="ref c">5026</td><td class="c">5</td><td class="r">9,00 €</td><td class="tot r">45,00 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">Kabel 25 mm² schwarz — MPPT → 48-V-Bus (pro Meter)</td><td class="ref c">5025</td><td class="c">5</td><td class="r">9,00 €</td><td class="tot r">45,00 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">Solarkabel 10 mm² rot — PV-Strings (pro Meter)</td><td class="ref c">5012</td><td class="c">20</td><td class="r">2,88 €</td><td class="tot r">57,60 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">Solarkabel 10 mm² schwarz — PV-Strings (pro Meter)</td><td class="ref c">5011</td><td class="c">20</td><td class="r">2,88 €</td><td class="tot r">57,60 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">MEGA-Sicherung 125 A/80 V (5er-Pack) — Schutz MPPT-Ausgang</td><td class="ref c">CIP138125020</td><td class="c">1</td><td class="r">36,43 €</td><td class="tot r">36,43 €</td><td class="c"><span class="src">Allo Solar</span></td></tr><tr><td class="">MC4-Stecker + DC-Kleinmaterial</td><td class="ref c">zu bestätigen</td><td class="c">1</td><td class="r">≈ 40,00 €</td><td class="tot r">≈ 40,00 €</td><td class="c"><span class="src">Ref.</span></td></tr><tr class="grand"><td class="lbl" colspan="5">Zwischensumme DC-Feld</td><td class="r">2 985,82 €</td></tr></tbody></table></div>
+
+<h2 class="section">2. AC-Feld — 6 kWp (Fronius-Wechselrichter, AC-Kopplung)</h2>
+<h3 class="sub"><span class="desc">12× AiKO 500 W → DC-Schutzkasten → Fronius-Wechselrichter → AC-Out des MultiPlus</span><span class="badge">Referenz — im Angebot zu bestätigen</span></h3>
+<div class="unit"><table><thead><tr><th class="">Produkt</th><th class="c">Art.-Nr.</th><th class="r">Menge</th><th class="r">EP inkl. MwSt.</th><th class="r">Gesamt inkl. MwSt.</th><th class="c">Quelle</th></tr></thead><tbody><tr><td class="">Solarmodul AiKO 500 W NEOSTAR 2S — monokristallin</td><td class="ref c">9059</td><td class="c">12</td><td class="r">108,99 €</td><td class="tot r">1 307,88 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">Wechselrichter Fronius Primo 6.0-1 — einphasig 230 V (DC→AC, 6 kW)</td><td class="ref c">4,210,069</td><td class="c">1</td><td class="r">≈ 1 290,00 €</td><td class="tot r">≈ 1 290,00 €</td><td class="c"><span class="src">Ref.</span></td></tr><tr><td class="">DC-String-Schutzkasten + Überspannungsschutz T2 1000 V — Fronius-Eingang</td><td class="ref c">zu bestätigen</td><td class="c">1</td><td class="r">≈ 129,99 €</td><td class="tot r">≈ 129,99 €</td><td class="c"><span class="src">Ref.</span></td></tr><tr><td class="">AC-Schutzkasten 32 A + FI 30 mA + Überspannungsschutz T2 — AC-Out-Kopplung</td><td class="ref c">953</td><td class="c">1</td><td class="r">129,99 €</td><td class="tot r">129,99 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">PV-Montagesatz BOSYTRO (Schiene + Clips, 4 Module)</td><td class="ref c">B0F7Y2HF28</td><td class="c">3</td><td class="r">40,84 €</td><td class="tot r">122,52 €</td><td class="c"><span class="src">Amazon</span></td></tr><tr><td class="">Solarkabel 10 mm² rot — PV-Strings (pro Meter)</td><td class="ref c">5012</td><td class="c">20</td><td class="r">2,88 €</td><td class="tot r">57,60 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">Solarkabel 10 mm² schwarz — PV-Strings (pro Meter)</td><td class="ref c">5011</td><td class="c">20</td><td class="r">2,88 €</td><td class="tot r">57,60 €</td><td class="c"><span class="src">Kitsolaire</span></td></tr><tr><td class="">AC-Kabel 3G6 mm² — Fronius → AC-Out (pro Meter)</td><td class="ref c">zu bestätigen</td><td class="c">15</td><td class="r">≈ 3,50 €</td><td class="tot r">≈ 52,50 €</td><td class="c"><span class="src">Ref.</span></td></tr><tr><td class="">MC4-Stecker + Kleinmaterial</td><td class="ref c">zu bestätigen</td><td class="c">1</td><td class="r">≈ 40,00 €</td><td class="tot r">≈ 40,00 €</td><td class="c"><span class="src">Ref.</span></td></tr><tr class="grand"><td class="lbl" colspan="5">Zwischensumme AC-Feld (Fronius)</td><td class="r">3 188,08 €</td></tr></tbody></table></div>
+
+<h2 class="section">3. Zusammenfassung — Kosten des Ausbaus</h2>
+<div class="unit"><table><thead><tr><th class="">Bezeichnung</th><th class="c"></th><th class="r"></th><th class="r"></th><th class="r">Betrag inkl. MwSt.</th><th class="c"></th></tr></thead><tbody><tr class="sum"><td class="lbl" colspan="5">DC-Feld — 6 kWp (DC-Kopplung / MPPT RS 450/100)</td><td class="tot r">2 985,82 €</td></tr><tr class="sum"><td class="lbl" colspan="5">AC-Feld — 6 kWp (Fronius-Wechselrichter, AC-Kopplung)</td><td class="tot r">3 188,08 €</td></tr><tr class="grand"><td class="lbl" colspan="5">GESAMT ERWEITERUNG (Material) ≈ +12 kWp</td><td class="r">≈ 6 173,90 €</td></tr></tbody></table></div>
+<div style="height:6px"></div>
+<div class="unit"><table><thead><tr><th class="">Bezeichnung</th><th class="c"></th><th class="r"></th><th class="r"></th><th class="r">Betrag inkl. MwSt.</th><th class="c"></th></tr></thead><tbody><tr class="sum"><td class="lbl" colspan="5">Erstanlage — Material (Ref. cout_installation_de.pdf)</td><td class="tot r">≈ 10 957,76 €</td></tr><tr class="sum"><td class="lbl" colspan="5">davon reale Rechnungskäufe (inkl. Versand)</td><td class="tot r">10 380,38 €</td></tr><tr class="sum"><td class="lbl" colspan="5">Erweiterung — Material (siehe oben)</td><td class="tot r">≈ 6 173,90 €</td></tr><tr class="grand"><td class="lbl" colspan="5">NEUE GESAMTANLAGE (Material) ≈ 21 kWp / 14,4 kWh</td><td class="r">≈ 17 131,66 €</td></tr></tbody></table></div>
+<div class="note">Ohne Montage / Arbeitslohn, ohne Anpassung der AC-Verteilung und ohne eventuellen Ausbau des Batteriespeichers. Versandkosten für die Erweiterungszeilen nicht enthalten.</div>
+
+<h2 class="section">4. Technische Hinweise</h2>
+<ul class="notes">
+  <li>DC-Feld (6 kWp): 12× AiKO 500 W DC-gekoppelt über 1× MPPT RS 450/100 am 48-V-Bus (Lynx). MPPT-Ausgang ≈ 100 A × 57,6 V ≈ 5,7 kW: leichte Spitzenabregelung der 6 kWp, ohne nennenswerten Einfluss auf den Ertrag.</li>
+  <li>AC-Feld (6 kWp): 12× AiKO 500 W → Fronius Primo 6.0-1 einphasig, gekoppelt am AC-Out des MultiPlus-II. Regelung per Frequenzverschiebung (Frequency-Shift Power Control), wenn die Batterie voll ist.</li>
+  <li>AC-Kopplungsfaktor 1:1 eingehalten: 6 kW PV ≤ 8 kW des MultiPlus-II 48/10000. ✓</li>
+  <li>Die Batterie (3× US5000 = 14,4 kWh) muss den PV-Überschuss bei AC-Kopplung aufnehmen; den maximal zulässigen Ladestrom überwachen. Ein Ausbau des Batteriespeichers kann sinnvoll sein (hier nicht beziffert).</li>
+  <li>Ansteuerung des Fronius über den Cerbo GX (Modbus TCP / SunSpec) — Firmware-Version und Aktivierung der Wechselrichter-Regelung prüfen.</li>
+  <li>Mit „Ref." gekennzeichnete Zeilen (Fronius, DC-String-Schutzkasten 1000 V, AC-Kabel): Richtpreise, im Lieferantenangebot zu bestätigen.</li>
+</ul>
+
+<h3 class="sub"><span>Quellen &amp; Links</span></h3>
+<ul class="links">
+  <li>Wechselrichter Fronius Primo 6.0-1 (einphasig): fronius.com → Primo 6.0-1 — Ref. 4,210,069</li>
+  <li>MPPT RS 450/100 SmartSolar · DC-Schutzkasten 2 PV/2 MPPT + Überspannungsschutz · AC-Schutzkasten 6 kW 32 A einphasig: kitsolaire-discount.com</li>
+  <li>Solarmodul AiKO 500 W NEOSTAR 2S (mono): kitsolaire-discount.com — Suche „NEOSTAR 2S"</li>
+  <li>PV-Montagesatz BOSYTRO (Amazon ASIN B0F7Y2HF28): amazon.fr/dp/B0F7Y2HF28</li>
+  <li>MEGA-Sicherung 125 A/80 V: allo.solar · Solarkabel / 25 mm² rot-schwarz: kitsolaire-discount.com</li>
+</ul>
+
+<div class="footer">Kosten der PV-Erweiterung 48 V — Ergänzung, erstellt am 26.06.2026 auf Basis realer Rechnungspreise und Lieferantenreferenzen.
+Preise in Euro inkl. MwSt., Änderungen je nach Lagerbestand und Angebot vorbehalten.</div>
+</body></html>
