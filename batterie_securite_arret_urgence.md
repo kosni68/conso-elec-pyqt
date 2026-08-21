@@ -2,9 +2,8 @@
 
 Document d'accompagnement du synoptique `synoptique_DC_AC_coupling.drawio`.
 Système concerné : **48 V off-grid Victron** — MultiPlus‑II 48/10000, MPPT RS 450/100 +
-2× MPPT 150/35, **parc Pylontech US5000** (3 modules), Cerbo GX, sectionneur batterie 275 A,
-protection DC **Lynx Class‑T Power In** (fusibles Class‑T) + **Lynx Distributor** (fusibles MEGA),
-champ DC + champ AC (Fronius, AC‑coupling).
+2× MPPT 150/35, **parc Pylontech US5000**, Cerbo GX, sectionneur batterie 275 A,
+fusibles 200 A MEGA, champ DC + champ AC (Fronius, AC‑coupling).
 
 > Réponses aux 3 questions :
 > 1. Faut‑il un module de gestion de batterie Pylontech ?
@@ -43,9 +42,8 @@ continu**. Le MultiPlus‑II 48/10000 peut tirer ~**180–210 A** en continu à 
 (≈ 10 kVA / 48 V), plus les pointes. Donc :
 
 - il faut **au moins 2 à 3 US5000 en parallèle** pour suivre la puissance de l'onduleur ;
-- avec **3 US5000** : parc = **300 A continus**, le **sectionneur 275 A** est donc au plus juste ;
-  le calibre des fusibles doit suivre le **nombre réel** de modules (règle : I_max parc = n × 100 A).
-  Voir **§4 — Fusibles : calibres et nombre**.
+- votre **fusible 200 A MEGA** ≈ 2 batteries, le **sectionneur 275 A** ≈ 3 batteries → à
+  accorder au **nombre réel** de modules (règle : I_max parc = n × 100 A).
 
 ➡️ **Conclusion Q1 :** aucun module de gestion à ajouter. Il faut seulement les **câbles Link**
 entre batteries + le **câble CAN Type B** vers le Cerbo + un **terminateur** + **DVCC activé**.
@@ -63,8 +61,7 @@ est donc **électriquement équivalent** — ce n'est pas lui qui fait la sécur
 La règle qui compte : **la protection (fusible) doit être sur le +, au plus près de la borne
 positive** de la batterie. Raison : dans un système où le **−/masse est référencé à la terre**,
 le défaut dangereux est un **court‑circuit du + vers une masse métallique** ; c'est le fusible
-sur le **+** qui le coupe. ✅ C'est ce que fait le **fusible Class‑T sur le +** (Lynx Class‑T
-Power In) — et, par module, le **125 A MEGA** de chaque US5000 dans le Lynx Distributor.
+sur le **+** qui le coupe. ✅ C'est bien ce que fait votre **200 A MEGA sur le +**.
 
 ### Du coup, pourquoi mettre le *sectionneur* sur le − ?
 Comme le **+** porte déjà la **protection** (fusible), placer l'**isolateur manuel sur le −**
@@ -80,8 +77,8 @@ est un choix courant et propre, pour de bonnes raisons :
 
 ```
         BATTERIE 48V (parc Pylontech US5000)
-          +  ──[ 125A MEGA / module ]──[ BUS Lynx ]──[ Class‑T ]──►  MultiPlus
-                (fusible au + = protection)        (voir §4)
+          +  ──[ 200A MEGA ]────────────────►  Bus + 48V (MultiPlus, MPPT…)
+                (fusible au + = protection)
           −  ──[ SECTIONNEUR 275A ]──[ shunt ]►  Bus − 48V
                 (isolateur manuel au −)
 ```
@@ -157,78 +154,12 @@ coupure PV type « pompier »), étiqueté et accessible.
 
 ---
 
-## 4. Fusibles : calibres et nombre (Class‑T + MEGA)
-
-### Pourquoi un Class‑T et pas un MEGA sur la grosse branche
-Un **US5000 débite ~2 500 A en court‑circuit** (manuel §5.7). Avec **3 modules en parallèle**, le
-courant de défaut disponible sur la barre atteint **~7,5 kA**. Or :
-
-| Fusible | Pouvoir de coupure (AIC) | Verdict sur 3× US5000 |
-|---|---|---|
-| **MEGA 80 V** | ~**2,5 kA** | OK **par module** (2,5 kA de contribution), **insuffisant** sur la barre |
-| **Class‑T** | **20 kA** | ✅ seul adapté à la branche qui voit tout le parc |
-
-C'est **la** raison d'être du **Lynx Class‑T Power In** dans l'installation : sous le calibre, un
-MEGA « fond » mais **l'arc DC continue** — risque d'incendie.
-
-### Les 3 contraintes de calibrage
-
-| Contrainte | Valeur | Source |
-|---|---|---|
-| Parc 3× US5000 | **100 A max par paire de câbles** → 300 A continus pour le parc ; 2 500 A de court‑circuit par module | Manuel US5000 §5.10 / §5.7 |
-| MultiPlus‑II 48/10000 | **Fusible CC recommandé 400 A**, câble **2× 50 mm² par borne** (0–5 m) ; ~180–200 A continus à 8 kW, ~450 A en pointe 20 kW | Manuel MultiPlus‑II §4.2 |
-| Lynx Class‑T Power In (LYN060404010) | **2 emplacements**, calibres **225 / 250 / 300 / 350 / 400 A**, barre **1000 A**, boulons **3/8"**, couple **33 Nm** | Manuel Victron |
-
-### ➡️ Choix retenu
-
-> **2 fusibles Class‑T de 225 A**, **un par câble positif 50 mm²** du MultiPlus
-> (les 2 paires 50 mm²/M10 achetées = « 2× 50 mm² par borne » exigés par Victron).
-> Total **450 A ≥ 400 A** préconisés ; chaque conducteur 50 mm² est protégé à sa vraie tenue
-> (~200–225 A). Charge réelle ≈ **105 A par fusible** à 8 kW continu, **225 A chacun** en pointe
-> 20 kW → pas de fusion intempestive.
-
-**Variante « un seul fusible »** (les deux cosses + sur le même goujon) : **1× 400 A**, calibre exact
-du tableau Victron pour le 48/10000 ; le 2ᵉ emplacement reste libre pour une future 2ᵉ chaîne de
-batteries.
-
-⚠️ **Ne pas** se rabattre sur 250 A avec **un seul** câble 50 mm² : on serait à ~82 % du calibre en
-permanence à 8 kW, et le MultiPlus serait **sous‑câblé** par rapport à sa notice.
-
-**Quantité à commander :** le Class‑T est à **usage unique** → **3× 225 A** (2 en service + 1 de
-rechange) ou **2× 400 A** (1 + 1). **Victron ne stocke pas les fusibles** : prendre du **Bussmann
-JJN** ou **Littelfuse JLLN** (type **A3T**, 160 Vcc, 20 kA, embouts **3/8"**).
-
-### Répartition complète des protections DC
-
-| Emplacement | Départ | Fusible | Câble |
-|---|---|---|---|
-| **Lynx Class‑T Power In** | **MultiPlus‑II 48/10000** | **2× Class‑T 225 A** (1 par câble +) | 2× 50 mm² par pôle |
-| **Lynx Distributor #1** | US5000 #1, #2, #3 (**un câble par module**) | **3× MEGA 125 A** | 25 mm² |
-| **Lynx Distributor #2** | MPPT RS 450/100 | **MEGA 125 A** | 25 mm² |
-| **Lynx Distributor #2** | MPPT 150/35 (×2) | **MEGA 60 A** (achetés ; 50 A convient aussi) | 10 mm² |
-
-⚠️ **Interdiction de chaîner les 3 US5000 sur une seule sortie** : chaque paire de câbles Pylontech
-est limitée à **100 A continus** (manuel §5.10) → **un câble par module** jusqu'au Lynx Distributor.
-
-> Les **MEGA 200 A** achetés ne servent plus côté batterie : le Class‑T les remplace sur la branche
-> onduleur. À garder en rechange.
-
-### Montage
-- Couple de serrage **33 Nm** sur les cosses **et** sur les fusibles.
-- Pattes du Class‑T : si elles ne posent pas **à plat** sur la barre, **retourner le fusible de 180°**.
-- Visserie fusible **3/8" (noire)** — à ne pas confondre avec la visserie **M10** des connexions DC
-  (n° de série `HQxxxx` : visserie fusible en M10, non repérée en noir).
-
----
-
-## 5. Synthèse (checklist)
+## 4. Synthèse (checklist)
 
 - [ ] **Pylontech** : BMS **intégré** → pas de module externe. Câbles **Link** + câble
       **CAN Type B** vers Cerbo + **terminateur** + **DVCC ON**.
-- [ ] **Nombre de US5000** cohérent avec le MultiPlus (n × 100 A) et avec le **sectionneur 275 A**.
-- [ ] **Fusible sur le +** au plus près de la borne — ✅ l'essentiel de sécurité :
-      **125 A MEGA par module** + **Class‑T** sur la branche MultiPlus (§4).
-- [ ] **Class‑T commandés** : 2× 225 A (ou 1× 400 A) **+ 1 de rechange** — Victron ne les stocke pas.
+- [ ] **Nombre de US5000** cohérent avec le MultiPlus (n × 100 A) et avec le **275 A / 200 A MEGA**.
+- [ ] **Fusible sur le +** (200 A MEGA) au plus près de la borne — ✅ l'essentiel de sécurité.
 - [ ] **Sectionneur sur le −** = choix valable ; le **+ reste sous tension** quand il est ouvert.
 - [ ] Pour la maintenance : **couper les 2 pôles** (sectionneur 2P ou isolateur + en plus).
 - [ ] **Arrêt d'urgence** : ne pas compter sur le Cerbo. Prévoir **coup‑de‑poing → contacteur DC**
@@ -244,14 +175,6 @@ est limitée à **100 A continus** (manuel §5.10) → **un câble par module** 
 - **DVCC** — Victron Energy, manuel GX/Cerbo (pilotage *closed‑loop* par le BMS).
 - **MultiPlus‑II 48/10000** — entrée *Remote on/off*, courants DC :
   https://www.victronenergy.com/upload/documents/MultiPlus-II_230V/32424-MultiPlus-II___Quattro-II-pdf-en.pdf
-- **Lynx Class‑T Power In** (LYN060404010) — 2 fusibles Class‑T, calibres 225/250/300/350/400 A :
-  https://www.victronenergy.com/dc-distribution-systems/lynx-class-t-power-in
-- **Manuel Lynx Class‑T Power In** (conception système, couples, visserie) :
-  https://www.victronenergy.com/upload/documents/Lynx_Class-T_Power_In/165891-Lynx_Class-T_Power_In-pdf-en.pdf
-- **Pylontech US5000** — manuel §5.7 (dispositif de déconnexion, Icc 2 500 A/module) et §5.10
-  (100 A max par paire de câbles) : `Doc/Batterie/Manuel d_utilisation US5000 FR.pdf`
-- **MultiPlus‑II 48/10000** — §4.2 « Fusible CC recommandé » (400 A, 2× 50 mm²) :
-  `Doc/Multiplus/Manuel-MultiPlus-II-8kV-10kV.pdf`
 - **UTE C15‑712‑1/‑2** — installations PV (autonomes avec stockage) : organes de coupure DC/AC,
   accessibilité, coupure d'urgence.
 - Voir aussi `regime_neutre_N-PE_off-grid.md` (liaison N‑PE, mise à la terre — le **PE reste
