@@ -61,10 +61,18 @@ est donc **électriquement équivalent** — ce n'est pas lui qui fait la sécur
 
 ### Ce qui, lui, n'est PAS au choix : la position du **fusible**
 La règle qui compte : **la protection (fusible) doit être sur le +, au plus près de la borne
-positive** de la batterie. Raison : dans un système où le **−/masse est référencé à la terre**,
-le défaut dangereux est un **court‑circuit du + vers une masse métallique** ; c'est le fusible
-sur le **+** qui le coupe. ✅ C'est ce que fait le **fusible Class‑T sur le +** (Lynx Class‑T
-Power In) — et, par module, le **125 A MEGA** de chaque US5000 dans le Lynx Distributor.
+positive** de la batterie. Raison : le défaut à couper est le **court‑circuit + ↔ −** (câble
+écrasé, outil en travers des bornes, défaut interne d'un appareil) — jusqu'à **7,5 kA** avec
+3× US5000. Placer le fusible au plus près du **+** réduit au minimum la longueur de câble non
+protégée en amont. ✅ C'est ce que fait le **fusible Class‑T sur le +** (Lynx Class‑T Power In)
+— et, par module, le **125 A MEGA** de chaque US5000 dans le Lynx Distributor.
+
+> ⚠️ On lit souvent une **autre** justification : « le défaut dangereux est le court‑circuit
+> du + vers une **masse métallique** ». Elle suppose que le **− est ponté à la terre** — ce
+> qui n'est **pas** le cas ici : cette installation est en **DC flottant**
+> (`regime_neutre_N-PE_off-grid.md` §9d). Un défaut + → masse n'y produit **aucun courant**,
+> donc le fusible du + ne le verrait pas. La **conclusion ne change pas** (fusible sur le +,
+> au plus près de la borne) — seule la raison change.
 
 ### Du coup, pourquoi mettre le *sectionneur* sur le − ?
 Comme le **+** porte déjà la **protection** (fusible), placer l'**isolateur manuel sur le −**
@@ -87,14 +95,18 @@ est un choix courant et propre, pour de bonnes raisons :
 ```
 
 ### ⚠️ Mises en garde importantes
-- Avec le sectionneur **sur le − seulement**, quand il est ouvert le **bus + reste à +48 V**
-  par rapport à la terre. Pour « couper la puissance » c'est efficace ; **pour intervenir en
+- Avec le sectionneur **sur le − seulement**, quand il est ouvert le **bus + reste relié à la
+  borne + de la batterie**, donc toujours à **+48 V par rapport au − batterie**. En DC
+  flottant, la tension par rapport à la **terre** n'est pas définie : ne t'y fie **jamais**
+  pour juger du danger. Pour « couper la puissance » c'est efficace ; **pour intervenir en
   sécurité, considérez le + comme toujours dangereux.**
 - Pour une **isolation franche de maintenance**, préférez un **sectionneur 2 pôles (L+ / L−)**
   ou ajoutez un isolateur sur le **+** — vous coupez alors les deux polarités.
-- Vérifiez **où se situe le pont −/PE (mise à la terre du négatif)** par rapport au sectionneur :
-  il doit rester cohérent pour que le **shunt et la référence du BMS** voient bien tout le
-  courant (pont côté batterie, mesures en aval).
+- **Aucun pont −/PE dans cette installation** : le DC est **flottant**
+  (`regime_neutre_N-PE_off-grid.md` §9d). Corollaire à assumer : un **1er défaut d'isolement**
+  vers une masse est **indolore mais invisible**. C'est le **2ᵉ** qui devient un court‑circuit
+  franc — et il se boucle par le **PE en 6 mm²**, pas par le 50 mm². D'où : **mesure Riso**
+  (mégohmmètre 500 V, installation consignée) à la mise en service **puis annuellement**.
 
 ➡️ **Conclusion Q2 :** ce n'est **pas une obligation**, c'est un **choix de câblage** légitime.
 L'essentiel — **fusible sur le +** — est respecté. Sachez juste que le **+ reste sous tension**
@@ -230,6 +242,8 @@ est limitée à **100 A continus** (manuel §5.10) → **un câble par module** 
       **125 A MEGA par module** + **Class‑T** sur la branche MultiPlus (§4).
 - [ ] **Class‑T commandés** : 2× 225 A (ou 1× 400 A) **+ 1 de rechange** — Victron ne les stocke pas.
 - [ ] **Sectionneur sur le −** = choix valable ; le **+ reste sous tension** quand il est ouvert.
+- [ ] **DC flottant** : aucun pont −/PE nulle part → **Riso mesuré** à la mise en service,
+      puis chaque année (`regime_neutre_N-PE_off-grid.md` §9d).
 - [ ] Pour la maintenance : **couper les 2 pôles** (sectionneur 2P ou isolateur + en plus).
 - [ ] **Arrêt d'urgence** : ne pas compter sur le Cerbo. Prévoir **coup‑de‑poing → contacteur DC**
       batterie + **coupure PV** + **coupure AC**, groupés et étiquetés.
